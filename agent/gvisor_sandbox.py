@@ -73,6 +73,9 @@ class GVisorExecutionEngine:
 
     def _local_fallback(self, code_str: str, sequences: List[List[float]]) -> Tuple[bool, float, str]:
         try:
+            from agent.ast_guard import sanitize_ast
+            sanitize_ast(code_str)
+
             from problem import run_simulation
             local_scope = {}
             exec(code_str, {}, local_scope)

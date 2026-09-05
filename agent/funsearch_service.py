@@ -8,6 +8,8 @@ from agent.restartable_island import AsyncClusterIsland, Program
 from agent.prompt_strategies import STRATEGY_REGISTRY
 from problem import INITIAL_HEURISTIC, PROGRAM_SKELETON, get_benchmark_dataset, run_simulation
 from behavior import get_behavioral_fingerprint
+from agent.expression_mutator import expression_mutator
+from agent.staged_pipeline import staged_pipeline
 
 logger = logging.getLogger("FunSearchService")
 
@@ -85,48 +87,47 @@ class FunSearchService:
             if not parents:
                 continue
 
-            # Mutation step via LLM or synthetic heuristic mutation
-            mutated_code = parents[0].code
-            if self.client:
-                try:
-                    prompt = f"Improve this bin packing priority heuristic:\n```python\n{parents[0].code}\n```\nReturn code only."
-                    resp = await self.client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[{"role": "user", "content": prompt}],
-                        max_tokens=300
-                    )
-                    mutated_code = resp.choices[0].message.content or parents[0].code
-                except Exception:
-                    mutated_code = self._synthetic_mutation(parents[0].code, island.island_id)
-            else:
+            # Mutation step via Two-Tier Expression Mutator or synthetic heuristic mutation
+            mutated_code = await expression_mutator.mutate_expression(
+                parents[0].code,
+                strategy=island.active_strategy
+            )
+            if not mutated_code:
                 mutated_code = self._synthetic_mutation(parents[0].code, island.island_id)
 
-            local_scope = {}
-            try:
-                exec(mutated_code, {}, local_scope)
-                fn = local_scope.get("priority")
-                if fn:
-                    fp, ok = get_behavioral_fingerprint(fn)
-                    fitness = run_simulation(fn, self.dataset)
-                    prog = Program(
-                        signature=fp,
-                        code=mutated_code,
-                        fitness=fitness,
-                        generation=island.generation_count + 1,
-                        char_length=len(mutated_code),
-                        origin_island=island.island_id
-                    )
-                    _, is_best = island.add_program(prog)
+            # Evaluate through Staged Fail-Fast Pipeline
+            diag = staged_pipeline.evaluate(mutated_code, self.dataset, island_id=island.island_id)
 
-                    async with self._lock:
-                        self.total_evals_completed += 1
-                        if fitness > self.top_fitness_score:
-                            self.top_fitness_score = fitness
-                            self.champion_program = prog
+            if diag.success and diag.fitness > 0.0:
+                try:
+                    local_scope = {}
+                    from agent.ast_guard import sanitize_ast
+                    sanitize_ast(mutated_code)
+                    exec(mutated_code, {}, local_scope)
+                    fn = local_scope.get("priority")
+                    if fn:
+                        fp, _ = get_behavioral_fingerprint(fn)
+                        prog = Program(
+                            signature=fp,
+                            code=mutated_code,
+                            fitness=diag.fitness,
+                            generation=island.generation_count + 1,
+                            char_length=len(mutated_code),
+                            origin_island=island.island_id
+                        )
+                        _, is_best = island.add_program(prog)
 
-                    await broker.publish("funsearch_telemetry", self.get_telemetry())
-            except Exception:
-                pass
+                        async with self._lock:
+                            self.total_evals_completed += 1
+                            if diag.fitness > self.top_fitness_score:
+                                self.top_fitness_score = diag.fitness
+                                self.champion_program = prog
+
+                        await broker.publish("funsearch_telemetry", self.get_telemetry())
+                except Exception as eval_exc:
+                    logger.debug(f"Fingerprinting/island update skipped: {eval_exc}")
+            else:
+                logger.debug(f"Candidate rejected at stage: {diag.origin} - {diag.detail}")
 
     def _synthetic_mutation(self, base_code: str, island_id: int) -> str:
         import random

@@ -64,4 +64,9 @@ class Settings:
     MEMORY_COMPACTION_THRESHOLD: int = int(os.getenv("MEMORY_COMPACTION_THRESHOLD", "12"))
     MEMORY_COMPACTION_MODEL: str = os.getenv("MEMORY_COMPACTION_MODEL", "gpt-4o-mini")
 
+    # Dual-Tier Model Routing (Local SLM for Evolution, Frontier LLM for Restarts)
+    LOCAL_MUTATION_BASE_URL: str = os.getenv("LOCAL_MUTATION_BASE_URL", "http://localhost:11434/v1")
+    LOCAL_MUTATION_MODEL: str = os.getenv("LOCAL_MUTATION_MODEL", "qwen2.5-coder:7b")
+    FRONTIER_SUPERVISOR_MODEL: str = os.getenv("FRONTIER_SUPERVISOR_MODEL", "gpt-4o-mini")
+
 config = Settings()

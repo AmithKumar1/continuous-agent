@@ -62,7 +62,27 @@ class CegisTelemetryTracker:
             "active_probes_count": self.active_probes_count
         }
 
+    def record_counterexample(self, ce: Any, source: str = "pipeline"):
+        ce_dict = {
+            "item": getattr(ce, "item", 0.0),
+            "cap": getattr(ce, "cap", 0.0),
+            "secondary_cap": getattr(ce, "secondary_cap", 0.0),
+            "source": source
+        }
+        event_payload = {
+            "id": self.total_checks + 1,
+            "timestamp": datetime.now(timezone.utc).strftime("%H:%M:%S"),
+            "status": "VIOLATED",
+            "invariant_name": getattr(ce, "invariant_name", "Unknown"),
+            "counterexample": ce_dict,
+            "solve_time_ms": 0.0
+        }
+        self.total_checks += 1
+        self.total_violations += 1
+        self.history.appendleft(event_payload)
+
     def get_recent_events(self) -> List[Dict[str, Any]]:
         return list(self.history)
 
 cegis_tracker = CegisTelemetryTracker()
+tracker = cegis_tracker
