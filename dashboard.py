@@ -324,13 +324,23 @@ async def dashboard_ui():
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
   <!-- Top Navigation Bar -->
   <header class="bg-slate-900/90 border-b border-slate-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50 backdrop-blur">
-    <div class="flex items-center gap-3">
-      <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-      <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-        <span>CONTINUOUS AGENT</span>
-        <span class="text-xs px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800 font-mono">v1.0.0-PROD</span>
-      </h1>
-    </div>
+      <div class="flex items-center gap-3">
+        <svg class="w-7 h-7 text-cyan-400 shrink-0 drop-shadow-[0_0_8px_rgba(56,189,248,0.6)]" viewBox="0 0 128 128" fill="none">
+          <circle cx="64" cy="64" r="58" fill="#090d16" stroke="#1e293b" stroke-width="3" />
+          <path d="M64 24 C84 24 100 40 100 60 C100 80 84 94 64 80 C48 68 36 60 36 44 C36 32 48 24 64 24 Z" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" />
+          <path d="M104 64 C104 84 88 100 68 100 C48 100 34 84 48 64 C60 48 68 36 84 36 C96 36 104 48 104 64 Z" stroke="#818cf8" stroke-width="5" stroke-linecap="round" />
+          <path d="M64 104 C44 104 28 88 28 68 C28 48 44 34 64 48 C80 60 92 68 92 84 C92 96 80 104 64 104 Z" stroke="#10b981" stroke-width="5" stroke-linecap="round" />
+          <polygon points="64,20 68,25 64,30 60,25" fill="#38bdf8" />
+          <polygon points="108,64 103,68 98,64 103,60" fill="#a855f7" />
+          <polygon points="64,108 60,103 64,98 68,103" fill="#10b981" />
+          <polygon points="20,64 25,60 30,64 25,68" fill="#06b6d4" />
+          <circle cx="64" cy="64" r="3.5" fill="#f8fafc" />
+        </svg>
+        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+          <span>CONTINUOUS AGENT</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800 font-mono">v1.0.0-PROD</span>
+        </h1>
+      </div>
 
     <!-- Central Telemetry Badges -->
     <div class="flex items-center gap-4 text-xs font-mono">

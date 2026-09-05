@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" fill="none">
+  <defs>
+    <linearGradient id="ca-metal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8" />
+      <stop offset="50%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+    <linearGradient id="ca-glow1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+    <linearGradient id="ca-glow2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <filter id="ca-neon-blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Base Plate (Dark Obsidian Circle) -->
+  <circle cx="64" cy="64" r="60" fill="#090d16" stroke="#1e293b" stroke-width="2" />
+  
+  <!-- Outer Subtle Orbit Ring -->
+  <circle cx="64" cy="64" r="50" stroke="#334155" stroke-dasharray="3 6" stroke-width="1" opacity="0.6" />
+
+  <!-- Interlocking Continuous Torus Loops (Upper and Lower Manifolds) -->
+  <g filter="url(#ca-neon-blur)">
+    <!-- Loop 1: Cyan to Indigo (Top-Left to Bottom-Right) -->
+    <path d="M64 24 C84 24 100 40 100 60 C100 80 84 94 64 80 C48 68 36 60 36 44 C36 32 48 24 64 24 Z"
+          fill="none" stroke="url(#ca-glow1)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Loop 2: Indigo to Violet (Top-Right to Bottom-Left) -->
+    <path d="M104 64 C104 84 88 100 68 100 C48 100 34 84 48 64 C60 48 68 36 84 36 C96 36 104 48 104 64 Z"
+          fill="none" stroke="url(#ca-metal)" stroke-width="4" opacity="0.85" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Loop 3: Emerald to Cyan Quantum Interconnect -->
+    <path d="M64 104 C44 104 28 88 28 68 C28 48 44 34 64 48 C80 60 92 68 92 84 C92 96 80 104 64 104 Z"
+          fill="none" stroke="url(#ca-glow2)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Loop 4: Counter-balance Loop (Symmetric Manifold) -->
+    <path d="M24 64 C24 44 40 28 60 28 C80 28 94 44 80 64 C68 80 60 92 44 92 C32 92 24 80 24 64 Z"
+          fill="none" stroke="url(#ca-glow1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+  </g>
+
+  <!-- Neuro-Symbolic Logic Diamond Nodes -->
+  <polygon points="64,18 69,24 64,30 59,24" fill="#38bdf8" />
+  <polygon points="110,64 104,69 98,64 104,59" fill="#a855f7" />
+  <polygon points="64,110 59,104 64,98 69,104" fill="#10b981" />
+  <polygon points="18,64 24,59 30,64 24,69" fill="#06b6d4" />
+
+  <!-- Core Singular Beacon -->
+  <circle cx="64" cy="64" r="4" fill="#f8fafc" />
+  <circle cx="64" cy="64" r="8" stroke="#38bdf8" stroke-width="1.5" opacity="0.8" />
+</svg>

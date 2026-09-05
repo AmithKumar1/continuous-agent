@@ -1,11 +1,21 @@
-# 🤖 Continuous Agent
+<p align="center">
+  <img src="assets/logo.png" alt="Continuous Agent Logo" width="160" />
+</p>
 
-[![CI Suite](https://github.com/AmithKumar1/continuous-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/AmithKumar1/continuous-agent/actions/workflows/ci.yml)
-[![Latest Release](https://img.shields.io/github/v/release/AmithKumar1/continuous-agent?color=blue&logo=github)](https://github.com/AmithKumar1/continuous-agent/releases)
-[![License: MIT](https://img.shields.io/github/license/AmithKumar1/continuous-agent?color=emerald)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Lean 4](https://img.shields.io/badge/Verified-Lean_4-purple?logo=lean)](https://lean-lang.org/)
-[![Wasmtime](https://img.shields.io/badge/Sandbox-Wasmtime-654FF0?logo=webassembly&logoColor=white)](https://wasmtime.dev/)
+<h1 align="center">Continuous Agent</h1>
+
+<p align="center">
+  <b>Autonomous Neuro-Symbolic Research & Algorithmic Discovery Engine</b>
+</p>
+
+<p align="center">
+  <a href="https://github.com/AmithKumar1/continuous-agent/actions/workflows/ci.yml"><img src="https://github.com/AmithKumar1/continuous-agent/actions/workflows/ci.yml/badge.svg" alt="CI Suite" /></a>
+  <a href="https://github.com/AmithKumar1/continuous-agent/releases"><img src="https://img.shields.io/github/v/release/AmithKumar1/continuous-agent?color=blue&logo=github" alt="Latest Release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/AmithKumar1/continuous-agent?color=emerald" alt="License: MIT" /></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" alt="Python" /></a>
+  <a href="https://lean-lang.org/"><img src="https://img.shields.io/badge/Verified-Lean_4-purple?logo=lean" alt="Lean 4" /></a>
+  <a href="https://wasmtime.dev/"><img src="https://img.shields.io/badge/Sandbox-Wasmtime-654FF0?logo=webassembly&logoColor=white" alt="Wasmtime" /></a>
+</p>
 
 > An autonomous neuro-symbolic continuous discovery system integrating a continuous execution heartbeat, cognitive memory with recursive compaction, RRF hybrid RAG search, multi-island evolutionary search (FunSearch), Counterexample-Guided Inductive Synthesis (CEGIS) with Z3, formal verification via Lean 4, dual-tier WASM/gVisor sandboxing, and automated GitHub GitOps PR publishing.
 
