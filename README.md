@@ -245,6 +245,7 @@ Continuous Agent is benchmarked against classic online bin packing suites (**Fal
 | `POST` | `/api/scheduler/update` | Update cron schedule pattern |
 | `POST` | `/api/scheduler/trigger-now`| Launch overnight discovery pipeline immediately |
 | `GET` | `/api/evolution/pareto-profile` | Live non-dominated Pareto frontier and island entropy diagnostics |
+| `GET` | `/api/evolution/policy-audit` | Historical record of adaptive policy shifts and parallel beam evaluations |
 | `GET` | `/metrics` | Prometheus exposition endpoint with live SQLite state sync |
 | `WS` | `/ws/telemetry` | Real-time WebSocket event stream |
 
@@ -273,6 +274,18 @@ Continuous Agent exposes research-grade telemetry and alerting via native Promet
   - `H < H_threshold` $\rightarrow$ triggers **Ring Migration** between islands.
   - Severe stagnation ($> 2W$ generations) $\rightarrow$ triggers **Cataclysmic Paradigm Restart**.
 - **Automated Schema Migration**: `scripts/migrate_nsga2_schema.py` provides non-destructive online upgrades adding `pareto_rank`, `crowding_distance`, and composite index `idx_heuristics_pareto`.
+
+---
+
+## ⚡ Autonomous Supervisory Remediation & Adaptive Sampling
+
+- **Ring Migration Topology**: When an island's Shannon entropy or fitness velocity plateaus, `execute_ring_migration()` transfers non-dominated Pareto exemplars to downstream neighbor islands ($i \to (i+1)\%N$), injecting novel decision phenotypes without losing accumulated elite fitness.
+- **Cataclysmic Paradigm Restarts**: Under severe prolonged stagnation ($> 2W$ generations), `execute_cataclysmic_restart()` purges non-Pareto individuals, preserves top Pareto stars, and switches the island's LLM mutation paradigm across orthogonal strategies (`INVERSE_FIT_DIVERGENCE`, `STOCHASTIC_SCATTER`, `COMPACT_GREEDY`).
+- **Entropy-Driven Thermal & Multi-Parameter Sampling Policy**: Synchronously scales generation parameters based on the normalized entropy deficit $D(H) = \max(0, 1 - H/H_{\text{target}})$:
+  - **Temperature**: $T \in [0.20, 0.95]$
+  - **Nucleus Sampling**: $top\_p \in [0.70, 0.98]$
+  - **Mutation Beam Width**: $K \in [1, 4]$ parallel mutation proposals per prompt.
+- **Policy Audit Trail**: All adaptive parameter transitions and parallel beam candidate yields are persisted to the `supervisor_policy_audit` table with composite indexing for inspection via `GET /api/evolution/policy-audit`.
 
 ---
 

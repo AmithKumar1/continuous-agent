@@ -178,12 +178,33 @@ CREATE INDEX IF NOT EXISTS idx_heuristics_island_gen
 
 CREATE INDEX IF NOT EXISTS idx_heuristics_pareto 
     ON heuristics(island_id, pareto_rank, crowding_distance DESC);
+
+-- 12. Supervisor Policy Transitions & Mutation Beam Audit
+CREATE TABLE IF NOT EXISTS supervisor_policy_audit (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    island_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL,          -- 'POLICY_TRANSITION' | 'BEAM_EVALUATION'
+    entropy REAL NOT NULL,
+    temperature REAL NOT NULL,
+    top_p REAL NOT NULL,
+    beam_width INTEGER NOT NULL,
+    candidates_generated INTEGER,      -- Populated during BEAM_EVALUATION
+    candidates_accepted INTEGER,       -- Count passing AST & verification checks
+    details TEXT,                      -- JSON metadata (diffs, error reasons, parent IDs)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_island_time 
+    ON supervisor_policy_audit(island_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_audit_event_type 
+    ON supervisor_policy_audit(event_type, created_at DESC);
 """
 
 CREATE_TABLES_SQL = SCHEMA
 
 async def apply_migrations(conn: aiosqlite.Connection):
-    """Idempotently adds NSGA-II columns if upgrading an older database schema."""
+    """Idempotently adds NSGA-II columns and supervisor_policy_audit table if upgrading an older database schema."""
     cursor = await conn.execute("PRAGMA table_info(heuristics);")
     existing_columns = {row["name"] for row in await cursor.fetchall()}
 
@@ -201,7 +222,32 @@ async def apply_migrations(conn: aiosqlite.Connection):
             ON heuristics(island_id, pareto_rank, crowding_distance DESC);
             """
         )
-        await conn.commit()
+
+    # Ensure supervisor_policy_audit table and indexes exist
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS supervisor_policy_audit (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            island_id INTEGER NOT NULL,
+            event_type TEXT NOT NULL,
+            entropy REAL NOT NULL,
+            temperature REAL NOT NULL,
+            top_p REAL NOT NULL,
+            beam_width INTEGER NOT NULL,
+            candidates_generated INTEGER,
+            candidates_accepted INTEGER,
+            details TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_island_time ON supervisor_policy_audit(island_id, created_at DESC);"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_event_type ON supervisor_policy_audit(event_type, created_at DESC);"
+    )
+    await conn.commit()
 
 class Database:
     def __init__(self, db_path: str = "agent_state.db"):

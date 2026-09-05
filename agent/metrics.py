@@ -39,6 +39,21 @@ ISLAND_STAGNATION_COUNT = Gauge(
     "Generations elapsed without fitness velocity improvement",
     ["island_id"]
 )
+ISLAND_SAMPLING_TEMPERATURE = Gauge(
+    "continuous_agent_island_sampling_temperature",
+    "Current adaptive LLM generation temperature",
+    ["island_id"]
+)
+ISLAND_TOP_P = Gauge(
+    "continuous_agent_island_sampling_top_p",
+    "Current adaptive LLM nucleus sampling top_p threshold",
+    ["island_id"]
+)
+ISLAND_MUTATION_BEAM_WIDTH = Gauge(
+    "continuous_agent_island_mutation_beam_width",
+    "Parallel candidate mutation proposals sampled per step",
+    ["island_id"]
+)
 
 # Initialize default labels for island 0 to guarantee presence in Prometheus scrapes
 ISLAND_FITNESS_BEST.labels(island_id="0").set(0.0)
@@ -46,6 +61,9 @@ ISLAND_FITNESS_MEAN.labels(island_id="0").set(0.0)
 ISLAND_PHENOTYPIC_ENTROPY.labels(island_id="0").set(1.0)
 ISLAND_PARETO_COUNT.labels(island_id="0").set(0)
 ISLAND_STAGNATION_COUNT.labels(island_id="0").set(0)
+ISLAND_SAMPLING_TEMPERATURE.labels(island_id="0").set(0.20)
+ISLAND_TOP_P.labels(island_id="0").set(0.70)
+ISLAND_MUTATION_BEAM_WIDTH.labels(island_id="0").set(1)
 
 # ---------------------------------------------------------------------------
 # 2. AST Cache & Transpiler Metrics

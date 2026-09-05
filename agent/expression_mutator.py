@@ -44,11 +44,24 @@ class ExpressionMutator:
             return match.group(1).strip()
         return "100.0 / ((bin_capacity - item) + 0.001)"
 
-    def build_prompt(self, current_code: str, strategy: Optional[PromptStrategy] = None) -> str:
+    def build_prompt(
+        self,
+        current_code: str,
+        strategy: Optional[PromptStrategy] = None,
+        exemplars: Optional[List[Dict[str, Any]]] = None
+    ) -> str:
         expr = self.extract_return_expr(current_code)
         directive = strategy.directive if strategy else "Mutate this return expression to improve packing efficiency."
+        exemplar_lines = []
+        if exemplars:
+            for ex in exemplars[:2]:
+                ex_code = ex.get("code", "")
+                ex_fit = ex.get("fitness", 0.0)
+                exemplar_lines.append(f"# Score {ex_fit:.4f}: return {self.extract_return_expr(ex_code)}")
+        exemplar_block = ("\n" + "\n".join(exemplar_lines)) if exemplar_lines else ""
         return (
-            f"# Candidate heuristic for online bin packing priority(item, bin_capacity):\n"
+            f"# Candidate heuristic for online bin packing priority(item, bin_capacity):"
+            f"{exemplar_block}\n"
             f"# Current: return {expr}\n"
             f"# Strategy: {directive}\n"
             f"# Output ONLY the single return expression on one line:\n"
@@ -80,19 +93,23 @@ class ExpressionMutator:
         self,
         parent_code: str,
         strategy: Optional[PromptStrategy] = None,
-        use_frontier: bool = False
+        use_frontier: bool = False,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        exemplars: Optional[List[Dict[str, Any]]] = None,
+        model_override: Optional[str] = None
     ) -> Optional[str]:
-        prompt = self.build_prompt(parent_code, strategy)
-        temp = strategy.temperature if strategy else 0.7
-        top_p = strategy.top_p if strategy else 0.9
+        prompt = self.build_prompt(parent_code, strategy, exemplars=exemplars)
+        temp = temperature if temperature is not None else (strategy.temperature if strategy else 0.7)
+        p_val = top_p if top_p is not None else (strategy.top_p if strategy else 0.9)
 
         # Choose client & model based on tier
         if use_frontier and self.frontier_client:
             client = self.frontier_client
-            model = self.frontier_model
+            model = model_override or self.frontier_model
         else:
             client = self.local_client
-            model = self.local_model
+            model = model_override or self.local_model
 
         try:
             resp = await client.chat.completions.create(
@@ -100,7 +117,7 @@ class ExpressionMutator:
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=50,  # Expression-only requires very few tokens!
                 temperature=temp,
-                top_p=top_p,
+                top_p=p_val,
                 timeout=5.0
             )
             raw = resp.choices[0].message.content or ""
@@ -115,7 +132,7 @@ class ExpressionMutator:
                         messages=[{"role": "user", "content": prompt}],
                         max_tokens=50,
                         temperature=temp,
-                        top_p=top_p,
+                        top_p=p_val,
                         timeout=5.0
                     )
                     raw = resp.choices[0].message.content or ""
@@ -124,4 +141,96 @@ class ExpressionMutator:
                     logger.debug(f"Frontier fallback also failed: {fe}")
             return None
 
+    async def mutate_expression_beam(
+        self,
+        parent_code: str,
+        exemplars: Optional[List[Dict[str, Any]]] = None,
+        temperature: float = 0.20,
+        top_p: float = 0.70,
+        beam_width: int = 1,
+        strategy: Optional[PromptStrategy] = None,
+        use_frontier: bool = False,
+        model_override: Optional[str] = None
+    ) -> List[str]:
+        """
+        Generates a beam of K candidate mutations in parallel using the given sampling policy.
+        Filters duplicates and empty extracts.
+        """
+        prompt = self.build_prompt(parent_code, strategy, exemplars=exemplars)
+
+        client = (
+            self.frontier_client
+            if (use_frontier and self.frontier_client)
+            else self.local_client
+        )
+        model = model_override or (self.frontier_model if use_frontier else self.local_model)
+
+        async def _sample_single() -> Optional[str]:
+            try:
+                resp = await client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=50,
+                    temperature=temperature,
+                    top_p=top_p,
+                    timeout=5.0
+                )
+                raw = resp.choices[0].message.content or ""
+                return self.assemble_code(raw)
+            except Exception as e:
+                logger.debug(f"Mutation using {model} failed: {e}")
+                return None
+
+        tasks = [_sample_single() for _ in range(max(1, beam_width))]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        candidates: List[str] = []
+        seen = set()
+        for res in results:
+            if isinstance(res, str) and res and res not in seen:
+                seen.add(res)
+                candidates.append(res)
+
+        return candidates
+
 expression_mutator = ExpressionMutator()
+
+async def mutate_expression(
+    parent_code: str,
+    exemplars: Optional[List[Dict[str, Any]]] = None,
+    temperature: float = 0.3,
+    top_p: float = 0.7,
+    strategy: Optional[PromptStrategy] = None,
+    use_frontier: bool = False,
+    model_override: Optional[str] = None
+) -> Optional[str]:
+    return await expression_mutator.mutate_expression(
+        parent_code=parent_code,
+        strategy=strategy,
+        use_frontier=use_frontier,
+        temperature=temperature,
+        top_p=top_p,
+        exemplars=exemplars,
+        model_override=model_override
+    )
+
+async def mutate_expression_beam(
+    parent_code: str,
+    exemplars: Optional[List[Dict[str, Any]]] = None,
+    temperature: float = 0.20,
+    top_p: float = 0.70,
+    beam_width: int = 1,
+    strategy: Optional[PromptStrategy] = None,
+    use_frontier: bool = False,
+    model_override: Optional[str] = None
+) -> List[str]:
+    return await expression_mutator.mutate_expression_beam(
+        parent_code=parent_code,
+        exemplars=exemplars,
+        temperature=temperature,
+        top_p=top_p,
+        beam_width=beam_width,
+        strategy=strategy,
+        use_frontier=use_frontier,
+        model_override=model_override
+    )

@@ -346,6 +346,57 @@ async def get_pareto_and_island_profile():
         "islands": [asdict(h) for h in islands_health]
     }
 
+@api_router.get("/evolution/policy-audit")
+async def get_policy_audit(island_id: Optional[int] = None, limit: int = 50):
+    """Returns the most recent policy transitions and beam evaluation events."""
+    rows = []
+    try:
+        async with get_db() as db:
+            from agent.db import apply_migrations
+            await apply_migrations(db)
+            if island_id is not None:
+                cursor = await db.execute(
+                    """
+                    SELECT id, island_id, event_type, entropy, temperature, top_p, 
+                           beam_width, candidates_generated, candidates_accepted, details, created_at
+                    FROM supervisor_policy_audit
+                    WHERE island_id = ?
+                    ORDER BY created_at DESC LIMIT ?
+                    """,
+                    (island_id, limit)
+                )
+            else:
+                cursor = await db.execute(
+                    """
+                    SELECT id, island_id, event_type, entropy, temperature, top_p, 
+                           beam_width, candidates_generated, candidates_accepted, details, created_at
+                    FROM supervisor_policy_audit
+                    ORDER BY created_at DESC LIMIT ?
+                    """,
+                    (limit,)
+                )
+            rows = await cursor.fetchall()
+    except Exception as e:
+        logger.debug(f"Could not load policy audit events: {e}")
+        return []
+
+    return [
+        {
+            "id": r["id"],
+            "island_id": r["island_id"],
+            "event_type": r["event_type"],
+            "entropy": r["entropy"],
+            "temperature": r["temperature"],
+            "top_p": r["top_p"],
+            "beam_width": r["beam_width"],
+            "candidates_generated": r["candidates_generated"],
+            "candidates_accepted": r["candidates_accepted"],
+            "details": json.loads(r["details"]) if r["details"] else None,
+            "created_at": str(r["created_at"])
+        }
+        for r in rows
+    ]
+
 app = FastAPI(title="Continuous Agent")
 app.include_router(api_router)
 

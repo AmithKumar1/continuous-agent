@@ -49,3 +49,13 @@ async def test_pareto_profile_endpoint():
         assert "pareto_points" in data
         assert "all_points" in data
         assert "islands" in data
+
+@pytest.mark.asyncio
+async def test_policy_audit_endpoint():
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        headers = {"Authorization": f"Bearer {config.DASHBOARD_API_KEY}"}
+        resp = await client.get("/api/evolution/policy-audit", headers=headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
