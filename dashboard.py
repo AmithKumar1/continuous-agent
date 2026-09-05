@@ -4,8 +4,10 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 import aiosqlite
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Security, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Security, WebSocket, WebSocketDisconnect, status, Response
 from fastapi.responses import HTMLResponse, JSONResponse
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from agent.metrics import sync_island_metrics_from_db
 from dataclasses import asdict
 from config import config
 from agent.auth import verify_api_key, verify_websocket_auth
@@ -346,6 +348,15 @@ async def get_pareto_and_island_profile():
 
 app = FastAPI(title="Continuous Agent")
 app.include_router(api_router)
+
+@app.get("/metrics", tags=["Telemetry"])
+async def prometheus_metrics():
+    """Prometheus exposition endpoint with on-scrape SQLite state synchronization."""
+    await sync_island_metrics_from_db()
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST
+    )
 
 # Forward EventBroker events to WebSocket clients
 async def event_broker_listener():

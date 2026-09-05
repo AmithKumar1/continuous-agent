@@ -1,0 +1,106 @@
+groups:
+  - name: continuous_agent_alerts
+    rules:
+      # -------------------------------------------------------------------------
+      # 1. Evolutionary Diversity & Stagnation Alerts
+      # -------------------------------------------------------------------------
+      - alert: IslandPhenotypicEntropyCollapse
+        expr: continuous_agent_island_phenotypic_entropy < 0.6
+        for: 5m
+        labels:
+          severity: warning
+          component: evolution
+        annotations:
+          summary: "Phenotypic diversity collapse on Island {{ $labels.island_id }}"
+          description: "Island {{ $labels.island_id }} phenotypic Shannon entropy dropped to {{ $value | printf \"%.2f\" }} (< 0.6) for > 5m. Behavioral diversity has collapsed; candidate heuristics are clustering into a uniform placement strategy. Suggested action: Trigger RING_MIGRATION or CATACLYSMIC_RESTART."
+
+      - alert: IslandPhenotypicEntropyCritical
+        expr: continuous_agent_island_phenotypic_entropy < 0.2
+        for: 10m
+        labels:
+          severity: critical
+          component: evolution
+        annotations:
+          summary: "Severe evolutionary monoculture on Island {{ $labels.island_id }}"
+          description: "Island {{ $labels.island_id }} entropy is near zero ({{ $value | printf \"%.2f\" }}). Population is completely stagnant; manual intervention or supervisor restart required."
+
+      - alert: IslandProlongedFitnessPlateau
+        expr: continuous_agent_island_stagnation_generations > 40
+        for: 10m
+        labels:
+          severity: warning
+          component: evolution
+        annotations:
+          summary: "Prolonged fitness plateau on Island {{ $labels.island_id }}"
+          description: "Island {{ $labels.island_id }} has spent {{ $value }} consecutive generations without fitness improvement. Candidate pool has converged to a local optimum."
+
+      # -------------------------------------------------------------------------
+      # 2. Formal Verification & Synthesis Alerts
+      # -------------------------------------------------------------------------
+      - alert: HighLean4ProofFailureRate
+        expr: |
+          (
+            sum(rate(continuous_agent_lean_proofs_total{status!="success"}[15m]))
+            /
+            clamp_min(sum(rate(continuous_agent_lean_proofs_total[15m])), 0.001)
+          ) * 100 > 60
+        for: 10m
+        labels:
+          severity: warning
+          component: formal_verification
+        annotations:
+          summary: "High Lean 4 theorem synthesis failure rate ({{ $value | printf \"%.1f\" }}%)"
+          description: "Over 60% of synthesized Lean 4 proofs have failed kernel verification or timed out over the last 15 minutes. This indicates prompt syntax drift, invalid tactic emissions, or Mathlib rational arithmetic mismatch."
+
+      - alert: Lean4KernelCrashSpike
+        expr: rate(continuous_agent_lean_proofs_total{status="kernel_error"}[5m]) > 0.5
+        for: 3m
+        labels:
+          severity: critical
+          component: formal_verification
+        annotations:
+          summary: "Spike in Lean 4 kernel errors"
+          description: "Lean 4 subprocesses are exiting with non-zero codes at {{ $value | printf \"%.2f\" }} errors/sec. Check Lean transpiler AST compatibility or missing Mathlib dependencies."
+
+      - alert: Z3ContractRefutationSurge
+        expr: |
+          (
+            sum(rate(continuous_agent_cegis_probes_total{result="refuted"}[10m]))
+            /
+            clamp_min(sum(rate(continuous_agent_cegis_probes_total[10m])), 0.001)
+          ) * 100 > 85
+        for: 10m
+        labels:
+          severity: info
+          component: cegis
+        annotations:
+          summary: "High SMT contract refutation rate ({{ $value | printf \"%.1f\" }}%)"
+          description: "Over 85% of candidate heuristics are violating formal contracts (singularities or dominance inversion). SMT feedback loop is actively rejecting invalid candidates."
+
+      # -------------------------------------------------------------------------
+      # 3. Cache & Service Infrastructure Alerts
+      # -------------------------------------------------------------------------
+      - alert: ASTMemoizationCacheDegraded
+        expr: |
+          (
+            sum(rate(continuous_agent_ast_cache_lookups_total{result="hit"}[10m]))
+            /
+            clamp_min(sum(rate(continuous_agent_ast_cache_lookups_total[10m])), 0.001)
+          ) * 100 < 20
+        for: 15m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "AST cache hit rate dropped below 20% ({{ $value | printf \"%.1f\" }}%)"
+          description: "Canonical AST memoization efficiency has degraded. Search exploration may be scattering wildly without canonical convergence."
+
+      - alert: ContinuousAgentDown
+        expr: up{job="continuous-agent"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: runtime
+        annotations:
+          summary: "Continuous Agent process unreachable"
+          description: "Prometheus cannot scrape http://127.0.0.1:8000/metrics. Service may have crashed, frozen the event loop, or failed systemd watchdog health checks."

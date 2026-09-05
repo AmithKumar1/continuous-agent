@@ -51,6 +51,20 @@ jobs:
         run: |
           python -m pytest
 
+      - name: Install Promtool
+        run: |
+          PROM_VERSION="2.54.1"
+          curl -LO "https://github.com/prometheus/prometheus/releases/download/v${PROM_VERSION}/prometheus-${PROM_VERSION}.linux-amd64.tar.gz"
+          tar -xzf "prometheus-${PROM_VERSION}.linux-amd64.tar.gz"
+          sudo mv "prometheus-${PROM_VERSION}.linux-amd64/promtool" /usr/local/bin/
+          rm -rf prometheus-*
+
+      - name: Verify Alert Rule Syntax & Execute Tests
+        run: |
+          promtool check rules deploy/prometheus-alerts.yml
+          promtool test rules tests/test_prometheus_alerts.yml
+
       - name: Run Pre-Flight Diagnostics Check
         run: |
           python preflight.py || true
+

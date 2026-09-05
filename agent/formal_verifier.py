@@ -41,13 +41,33 @@ class Lean4Verifier:
             err_txt = stderr.decode("utf-8")
 
             if proc.returncode == 0:
+                try:
+                    from agent.metrics import record_lean_proof
+                    record_lean_proof(status="success")
+                except Exception:
+                    pass
                 return True, out_txt or "Proof verified successfully (Lean 4 kernel accepted)."
             else:
+                try:
+                    from agent.metrics import record_lean_proof
+                    record_lean_proof(status="kernel_error")
+                except Exception:
+                    pass
                 return False, err_txt or out_txt or f"Lean exited with status {proc.returncode}"
 
         except asyncio.TimeoutError:
+            try:
+                from agent.metrics import record_lean_proof
+                record_lean_proof(status="timeout")
+            except Exception:
+                pass
             return False, f"Lean verification timed out after {timeout_sec}s"
         except Exception as e:
+            try:
+                from agent.metrics import record_lean_proof
+                record_lean_proof(status="kernel_error")
+            except Exception:
+                pass
             return False, f"Lean execution error: {str(e)}"
         finally:
             if os.path.exists(temp_path):
@@ -63,8 +83,18 @@ class Z3ConstraintVerifier:
             x = z3.Real("x")
             s.add(x > 0)
             is_sat = (s.check() == z3.sat)
+            try:
+                from agent.metrics import record_cegis_probe
+                record_cegis_probe(result="verified" if is_sat else "refuted")
+            except Exception:
+                pass
             return {"verified": is_sat, "status": "SAT" if is_sat else "UNSAT"}
         except Exception as e:
+            try:
+                from agent.metrics import record_cegis_probe
+                record_cegis_probe(result="refuted")
+            except Exception:
+                pass
             return {"verified": False, "error": str(e)}
 
 lean_verifier = Lean4Verifier()

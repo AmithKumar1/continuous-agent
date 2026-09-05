@@ -245,7 +245,23 @@ Continuous Agent is benchmarked against classic online bin packing suites (**Fal
 | `POST` | `/api/scheduler/update` | Update cron schedule pattern |
 | `POST` | `/api/scheduler/trigger-now`| Launch overnight discovery pipeline immediately |
 | `GET` | `/api/evolution/pareto-profile` | Live non-dominated Pareto frontier and island entropy diagnostics |
+| `GET` | `/metrics` | Prometheus exposition endpoint with live SQLite state sync |
 | `WS` | `/ws/telemetry` | Real-time WebSocket event stream |
+
+---
+
+## 📊 Production Observability & Prometheus Telemetry
+
+Continuous Agent exposes research-grade telemetry and alerting via native Prometheus exposition on `/metrics`:
+- **Evolutionary Population Health**: `continuous_agent_island_fitness_best`, `continuous_agent_island_fitness_mean`, `continuous_agent_island_phenotypic_entropy`, `continuous_agent_island_pareto_count`, and `continuous_agent_island_stagnation_generations`.
+- **AST Cache & Transpiler Efficiency**: `continuous_agent_ast_cache_lookups_total` (hit/miss counters) and `continuous_agent_ast_cache_hit_ratio`.
+- **Formal Verification Outcomes**: `continuous_agent_lean_proofs_total` (success, kernel_error, timeout) and `continuous_agent_cegis_probes_total` (verified, refuted, timeout).
+- **Execution Cost Profiling**: `continuous_agent_wasm_fuel_consumed` histogram tracking instruction fuel consumption distribution.
+
+### Dashboards & Alerting Infrastructure
+- **Grafana Dashboard**: Pre-configured definition in `deploy/grafana-dashboard.json` provides an 8-panel overview with Pareto convergence, entropy gauges, and verification latency.
+- **Prometheus Alert Rules**: Pre-configured alerts in `deploy/prometheus-alerts.yml` covering phenotypic entropy decay (`< 0.6`), severe monoculture (`< 0.2`), prolonged fitness plateaus, Lean 4 proof kernel crashes, and process downtime.
+- **Promtool Unit Testing**: Comprehensive synthetic unit tests in `tests/test_prometheus_alerts.yml` validated via CI.
 
 ---
 

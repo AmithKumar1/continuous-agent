@@ -1,0 +1,109 @@
+# tests/test_prometheus_alerts.yml
+rule_files:
+  - ../deploy/prometheus-alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+  # ---------------------------------------------------------------------------
+  # Test 1: Phenotypic Diversity Collapse Alerts
+  # ---------------------------------------------------------------------------
+  - interval: 1m
+    input_series:
+      - series: 'continuous_agent_island_phenotypic_entropy{island_id="0"}'
+        # Starts nominal (1.5), drops below 0.6 at t=3m, drops below 0.2 at t=12m
+        values: '1.5 1.5 1.5 0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.10 0.10'
+
+    alert_rule_test:
+      # At t=6m (3m into collapse): Pending, should NOT fire yet (for: 5m)
+      - eval_time: 6m
+        alertname: IslandPhenotypicEntropyCollapse
+        exp_alerts: []
+
+      # At t=8m (5m into collapse): Warning alert must FIRE
+      - eval_time: 8m
+        alertname: IslandPhenotypicEntropyCollapse
+        exp_alerts:
+          - exp_labels:
+              alertname: IslandPhenotypicEntropyCollapse
+              severity: warning
+              component: evolution
+              island_id: "0"
+            exp_annotations:
+              summary: "Phenotypic diversity collapse on Island 0"
+              description: "Island 0 phenotypic Shannon entropy dropped to 0.45 (< 0.6) for > 5m. Behavioral diversity has collapsed; candidate heuristics are clustering into a uniform placement strategy. Suggested action: Trigger RING_MIGRATION or CATACLYSMIC_RESTART."
+
+      # At t=20m (8m after dropping < 0.2): Critical alert still pending (for: 10m)
+      - eval_time: 20m
+        alertname: IslandPhenotypicEntropyCritical
+        exp_alerts: []
+
+      # At t=22m (10m after dropping < 0.2): Critical alert must FIRE
+      - eval_time: 22m
+        alertname: IslandPhenotypicEntropyCritical
+        exp_alerts:
+          - exp_labels:
+              alertname: IslandPhenotypicEntropyCritical
+              severity: critical
+              component: evolution
+              island_id: "0"
+            exp_annotations:
+              summary: "Severe evolutionary monoculture on Island 0"
+              description: "Island 0 entropy is near zero (0.10). Population is completely stagnant; manual intervention or supervisor restart required."
+
+  # ---------------------------------------------------------------------------
+  # Test 2: Lean 4 Formal Verification Failure Spike
+  # ---------------------------------------------------------------------------
+  - interval: 1m
+    input_series:
+      # 2 successes per minute (counter increments +2/min)
+      - series: 'continuous_agent_lean_proofs_total{status="success"}'
+        values: '0+2x30'
+      # 8 kernel errors per minute (counter increments +8/min -> 80% failure rate)
+      - series: 'continuous_agent_lean_proofs_total{status="kernel_error"}'
+        values: '0+8x30'
+
+    alert_rule_test:
+      # At t=8m: High failure rate detected (>60%), but pending (for: 10m)
+      - eval_time: 8m
+        alertname: HighLean4ProofFailureRate
+        exp_alerts: []
+
+      # At t=12m (10m elapsed): High failure rate alert must FIRE
+      - eval_time: 12m
+        alertname: HighLean4ProofFailureRate
+        exp_alerts:
+          - exp_labels:
+              alertname: HighLean4ProofFailureRate
+              severity: warning
+              component: formal_verification
+            exp_annotations:
+              summary: "High Lean 4 theorem synthesis failure rate (80.0%)"
+              description: "Over 60% of synthesized Lean 4 proofs have failed kernel verification or timed out over the last 15 minutes. This indicates prompt syntax drift, invalid tactic emissions, or Mathlib rational arithmetic mismatch."
+
+  # ---------------------------------------------------------------------------
+  # Test 3: Daemon Deadlock or Crash (Process Down)
+  # ---------------------------------------------------------------------------
+  - interval: 1m
+    input_series:
+      - series: 'up{job="continuous-agent"}'
+        values: '1 1 1 0 0 0 0'
+
+    alert_rule_test:
+      # At t=3m: Transitioned to 0, but pending (for: 1m)
+      - eval_time: 3m
+        alertname: ContinuousAgentDown
+        exp_alerts: []
+
+      # At t=4m (1m down): Critical service down alert must FIRE
+      - eval_time: 4m
+        alertname: ContinuousAgentDown
+        exp_alerts:
+          - exp_labels:
+              alertname: ContinuousAgentDown
+              severity: critical
+              component: runtime
+              job: continuous-agent
+            exp_annotations:
+              summary: "Continuous Agent process unreachable"
+              description: "Prometheus cannot scrape http://127.0.0.1:8000/metrics. Service may have crashed, frozen the event loop, or failed systemd watchdog health checks."

@@ -130,6 +130,11 @@ class SymbolicContractVerifier:
                     m = s.model()
                     item_val = float(m[item].as_decimal(3).replace("?", "")) if m[item] is not None else 10.0
                     cap_val = float(m[cap].as_decimal(3).replace("?", "")) if m[cap] is not None else 10.0
+                    try:
+                        from agent.metrics import record_cegis_probe
+                        record_cegis_probe("refuted")
+                    except Exception:
+                        pass
                     return False, Counterexample("NoSingularity", item_val, cap_val, "Divisor evaluates to 0")
                 s.pop()
 
@@ -151,12 +156,27 @@ class SymbolicContractVerifier:
                 m = s.model()
                 item_val = float(m[item].as_decimal(3).replace("?", "")) if m[item] is not None else 15.0
                 cap_val = float(m[cap].as_decimal(3).replace("?", "")) if m[cap] is not None else 20.0
+                try:
+                    from agent.metrics import record_cegis_probe
+                    record_cegis_probe("refuted")
+                except Exception:
+                    pass
                 return False, Counterexample("FitMonotonicity", item_val, cap_val, "Tighter fit assigned lower priority")
 
+            try:
+                from agent.metrics import record_cegis_probe
+                record_cegis_probe("verified")
+            except Exception:
+                pass
             return True, None
 
         except (ValueError, NotImplementedError):
             # Gracefully bypass when using unsupported operations
             return True, None
         except Exception as e:
+            try:
+                from agent.metrics import record_cegis_probe
+                record_cegis_probe("timeout" if "timeout" in str(e).lower() else "refuted")
+            except Exception:
+                pass
             return False, Counterexample("VerificationCrash", 0, 0, detail=str(e))

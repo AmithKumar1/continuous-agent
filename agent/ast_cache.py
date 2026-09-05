@@ -72,9 +72,16 @@ class ASTEvaluationCache:
             logger.warning(f"Could not initialize ast_memo_cache table: {e}")
 
     def get(self, code_str: str) -> Optional[Tuple[float, Dict[str, Any]]]:
+        try:
+            from agent.metrics import record_ast_lookup
+        except Exception:
+            record_ast_lookup = None
+
         ast_hash = compute_ast_hash(code_str)
         with self._lock:
             if ast_hash in self._memory_cache:
+                if record_ast_lookup:
+                    record_ast_lookup(is_hit=True)
                 return self._memory_cache[ast_hash]
 
         # SQLite fallback
@@ -92,10 +99,14 @@ class ASTEvaluationCache:
                     diag = json.loads(row[1]) if row[1] else {}
                     with self._lock:
                         self._memory_cache[ast_hash] = (fitness, diag)
+                    if record_ast_lookup:
+                        record_ast_lookup(is_hit=True)
                     return fitness, diag
         except Exception as e:
             logger.debug(f"Cache read error: {e}")
 
+        if record_ast_lookup:
+            record_ast_lookup(is_hit=False)
         return None
 
     def put(self, code_str: str, fitness: float, diagnostic: Optional[Dict[str, Any]] = None):
