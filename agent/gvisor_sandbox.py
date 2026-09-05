@@ -2,7 +2,8 @@ import asyncio
 import hashlib
 import json
 import logging
-from typing import Any, Dict, List, Tuple
+import shutil
+from typing import Any, Dict, List, Optional, Tuple
 from config import config
 
 logger = logging.getLogger("GVisorSandbox")
@@ -18,6 +19,11 @@ class GVisorExecutionEngine:
         sequences: List[List[float]],
         timeout_sec: Optional[float] = None
     ) -> Tuple[bool, float, str]:
+        # Fallback to local execution if Docker is not installed or unreachable
+        if not shutil.which("docker"):
+            logger.debug("Docker not detected in PATH; falling back to in-process local evaluation.")
+            return self._local_fallback(code_str, sequences)
+
         timeout = timeout_sec or self.timeout_sec
         payload = json.dumps({
             "mode": "score",

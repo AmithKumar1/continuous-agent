@@ -42,63 +42,119 @@
 
 ---
 
-## ✨ Key Capabilities
+## 📋 Mandatory Prerequisites
 
-- **Continuous Heartbeat Loop (`agent/core.py`)**: Asynchronous evaluate-and-act cycle with circuit breakers, token governors, and multi-turn parallel tool execution.
-- **Cognitive Memory & Compactor (`agent/cognitive_memory.py`)**: Hierarchical memory that automatically compacts execution history into semantic summaries, preserving context while eliminating token bloat.
-- **Reciprocal Rank Fusion Hybrid Search (`agent/hybrid_search.py`)**: Merges SQLite FTS5 lexical keyword search (BM25) with ChromaDB dense vector embeddings (`text-embedding-3-small`).
-- **Evolutionary FunSearch Service (`agent/funsearch_service.py`)**: Multi-island evolutionary algorithm with behavioral fingerprinting, parsimony pressure (favoring shorter solutions), and stagnation-triggered strategy mutations.
-- **Counterexample-Guided Inductive Synthesis (`cegis_verifier.py`, `agent/cegis_tracker.py`)**: SMT-driven invariant verification checking mathematical boundary conditions (divide-by-zero, monotonicity), generating adversarial test cases dynamically.
-- **Lean 4 Proof Synthesis & Verification (`agent/lean_synthesizer.py`, `agent/formal_verifier.py`)**: Automatically transpiles Python ASTs into Lean 4 theorems and validates them against the official Lean 4 kernel.
-- **Dual-Tier Sandboxing (`agent/wasm_sandbox.py`, `sandbox.py`)**:
-  - **Tier 1**: Sub-millisecond WebAssembly JIT with instruction fuel limits and 64KB linear memory bounds.
-  - **Tier 2**: Hardened container isolation via gVisor (`runsc`) for complex workloads.
-- **GitOps Pull Request Automation (`agent/gitops.py`)**: Automatically creates Git branches, commits discovered Python heuristics and Lean 4 certificates, and opens GitHub Pull Requests.
-- **Real-Time Operator Dashboard (`dashboard.py`)**: Dark glassmorphism dashboard with WebSocket telemetry, interactive Z3/Lean 4 probes, scheduler countdown, and cognitive scratchpad editor.
+| Layer | Dependency | Fallback / Impact If Missing |
+|---|---|---|
+| **LLM Provider** | `OPENAI_API_KEY` (or Anthropic/Custom) in `.env` | Island mutations and prompt synthesis require an active API key. |
+| **SMT & Formal Proofs** | `elan` (Lean 4 compiler) + `z3-solver` | Synthesizes Lean 4 code; verification requires `elan` toolchain on PATH. |
+| **Container Sandbox** | Host Docker daemon with `runsc` (gVisor) runtime | **Automatic fallback**: If Docker is offline, system automatically evaluates programs in-process via WebAssembly or local simulation. |
+| **WASM Runtime** | `wasmtime` Python wheel | Sub-millisecond in-process evaluations (<40µs). |
+| **GitOps (Optional)** | `GITHUB_TOKEN` + `GITHUB_REPO` | Automated branch, commit, and PR creation via GitHub REST API. |
 
 ---
 
-## 🚀 Quickstart
+## 🚀 One-Command Automated Setup (Linux / macOS)
 
-### 1. Clone & Configure
+Run the included bootstrapping script to install Lean 4 via `elan`, configure a virtual environment, install Python requirements, build the optional Docker evaluator image, and run pre-flight diagnostics:
 
 ```bash
 git clone https://github.com/AmithKumar1/continuous-agent.git
 cd continuous-agent
-cp .env.example .env
+chmod +x setup.sh
+./setup.sh
 ```
 
-Edit `.env` with your API keys:
-- `OPENAI_API_KEY`: Required for LLM generation and embeddings.
-- `DASHBOARD_API_KEY`: Passcode for the operator dashboard.
-- `GITHUB_TOKEN` & `GITHUB_REPO`: For automated GitOps pull requests.
-
-### 2. Run Pre-Flight Diagnostics
+Then edit `.env` with your API keys and launch:
 
 ```bash
-python preflight.py
-```
-
-### 3. Run Locally
-
-```bash
-pip install -r requirements.txt
+source .venv/bin/activate
 python main.py
-```
-
-Open your browser at `http://localhost:8000`.
-
-### 4. Run with Docker Compose
-
-```bash
-docker compose up -d --build
 ```
 
 ---
 
-## 🛠️ Testing & Verification
+## 📦 How to Run (2 Setup Paths)
 
-Run the verification suites for the WebAssembly sandbox and Lean 4 formal prover:
+### Path A: Docker (Recommended)
+
+The bundled `Dockerfile` automatically installs `elan`, builds the Lean 4 compiler, and installs `z3` and `wasmtime`.
+
+1. **Clone and create the environment file**:
+   ```bash
+   git clone https://github.com/AmithKumar1/continuous-agent.git
+   cd continuous-agent
+   cp .env.example .env
+   # Add your OPENAI_API_KEY, AGENT_API_TOKEN, etc.
+   ```
+
+2. **Build the evaluator image used for container sandboxing**:
+   ```bash
+   docker build -t algo-sandbox:latest -f Dockerfile.evaluator .
+   ```
+
+3. **Launch the container stack**:
+   ```bash
+   docker compose up --build -d
+   ```
+
+Open your browser at `http://localhost:8000`.
+
+---
+
+### Path B: Bare-Metal Local Machine
+
+If running directly on macOS, Linux, or Windows without Docker:
+
+1. **Install Lean 4 via `elan`** (macOS/Linux):
+   ```bash
+   curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain leanprover/lean4:stable
+   source $HOME/.elan/env
+   ```
+
+2. **Install Python requirements**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run pre-flight verification**:
+   ```bash
+   python preflight.py
+   ```
+
+4. **Start the daemon**:
+   ```bash
+   python main.py
+   ```
+
+---
+
+## 🎨 Interactive Control Deck Components
+
+The FastAPI dashboard (`http://localhost:8000`) provides real-time telemetry over WebSockets:
+
+1. **Dynamic Animated SVG Pipeline Flowchart**:
+   - Live visual progression: `Islands` ➔ `WASM Sandbox` ➔ `Z3 SMT Prover` ➔ `Lean 4 Kernel` ➔ `GitOps Dispatch`.
+   - Reverse rose-tinted CEGIS counterexample feedback beam on invariant violations.
+   - Dynamic stage controller with glowing SVG filters.
+
+2. **High-DPI Canvas Radar Chart (`Island Population Dynamics`)**:
+   - Multi-axis behavioral tracking across 5 dimensions: *Peak Fitness*, *Cluster Diversity*, *AST Parsimony*, *Throughput*, and *Invariant Soundness*.
+   - Retina-scaled rendering (`devicePixelRatio`).
+   - Euclidean distance hit-testing (<18px) with pulsing halos and floating glassmorphic tooltip.
+
+3. **Nightly Discovery Scheduler**:
+   - Live countdown display for cron-scheduled discovery runs (default `0 2 * * *`).
+   - Preset buttons and manual immediate dispatch trigger.
+
+4. **Neuro-Symbolic CEGIS & Lean 4 Prover**:
+   - Interactive heuristic editor with Singularity test presets.
+   - Live Z3 SMT contract checking with counterexample extraction.
+   - Lean 4 formal proof certificate generation and GitHub PR creation.
+
+---
+
+## 🛠️ Testing & Verification
 
 ```bash
 # Test WebAssembly JIT execution & fuel limits
@@ -141,6 +197,7 @@ python test_lean_verify.py
 - **Scope Restriction**: Autonomous security audits enforce explicit host allowlisting (`SECURITY_SCAN_ALLOWED_HOSTS`).
 - **Deadlock-Free Lock Ordering**: Distributed tool execution enforces ordered resource locks to prevent concurrency deadlocks.
 - **Resource Limits**: WASM execution enforces explicit fuel depletion bounds; gVisor fallback enforces read-only root filesystems and process limits.
+- **Authentication**: REST API and WebSocket channels secured via `X-API-Key` or `Authorization: Bearer <token>`.
 
 ---
 
