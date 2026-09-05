@@ -1,0 +1,48 @@
+[Unit]
+Description=Continuous Discovery Agent (Neuro-Symbolic Synthesizer)
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=notify
+NotifyAccess=main
+
+# Replace 'deploy' with the non-root user that owns the repository
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/continuous-agent
+
+# Critical: Ensure Lean 4 (elan) and the Python venv binaries are on PATH
+Environment="PATH=/home/deploy/.elan/bin:/home/deploy/continuous-agent/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+# Flush stdout/stderr immediately to avoid buffered log stalls in journalctl
+Environment="PYTHONUNBUFFERED=1"
+EnvironmentFile=/home/deploy/continuous-agent/.env
+
+# Daemon execution command
+ExecStart=/home/deploy/continuous-agent/.venv/bin/python main.py
+
+# Systemd Watchdog Configuration (restarts automatically if asyncio event loop locks up)
+WatchdogSec=20s
+WatchdogSignal=SIGABRT
+
+# Startup and Shutdown Timeouts
+TimeoutStartSec=45s
+TimeoutStopSec=30s
+
+# Failure Recovery Strategy
+Restart=always
+RestartSec=5s
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Resource Constraints for heavy SMT solving, Wasmtime JIT compilation, and worker threads
+LimitNOFILE=65536
+TasksMax=4096
+
+# Logging streams directly into systemd journal
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=continuous-agent
+
+[Install]
+WantedBy=multi-user.target
