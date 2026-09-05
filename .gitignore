@@ -1,0 +1,14 @@
+.env
+agent_state.db
+agent_state.db-journal
+agent_state.db-wal
+agent_state.db-shm
+chroma_data/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.DS_Store
+*.log
+scratch/

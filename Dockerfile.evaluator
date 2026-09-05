@@ -1,0 +1,10 @@
+FROM python:3.11-alpine
+
+RUN adduser -D -u 10001 sandboxuser
+WORKDIR /sandbox
+
+COPY evaluator_harness.py /sandbox/harness.py
+RUN chmod +x /sandbox/harness.py
+
+USER sandboxuser
+ENTRYPOINT ["python", "-u", "/sandbox/harness.py"]
