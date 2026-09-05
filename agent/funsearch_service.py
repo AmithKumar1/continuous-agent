@@ -11,7 +11,99 @@ from behavior import get_behavioral_fingerprint
 from agent.expression_mutator import expression_mutator
 from agent.staged_pipeline import staged_pipeline
 
+import aiosqlite
+from agent.db import get_db
+from agent.nsga2 import (
+    NSGA2Individual,
+    nsga2_truncate,
+    crowded_tournament_select,
+    fast_non_dominated_sort,
+    assign_crowding_distance
+)
+
 logger = logging.getLogger("FunSearchService")
+
+class FunSearchIsland:
+    def __init__(self, island_id: int, max_capacity: int = 30):
+        self.island_id = island_id
+        self.max_capacity = max_capacity
+        self.individuals: List[NSGA2Individual] = []
+
+    def register_heuristic(
+        self,
+        heuristic_id: str,
+        code: str,
+        packing_ratio: float,
+        fuel_consumed: int,
+        phenotype_signature: str
+    ):
+        """Registers an evaluated candidate and triggers NSGA-II truncation on overflow."""
+        ind = NSGA2Individual(
+            id=heuristic_id,
+            code=code,
+            packing_ratio=packing_ratio,
+            fuel_consumed=fuel_consumed,
+            phenotype_signature=phenotype_signature
+        )
+        self.individuals.append(ind)
+
+        # Capacity management: preserve Pareto-optimal and diverse solutions
+        if len(self.individuals) > self.max_capacity:
+            self.individuals = nsga2_truncate(self.individuals, self.max_capacity)
+
+    def sample_prompt_exemplars(self, count: int = 2) -> List[NSGA2Individual]:
+        """
+        Samples parent exemplars for LLM expression mutation.
+        Ranks population via NSGA-II, then uses crowded tournament selection.
+        """
+        if len(self.individuals) <= count:
+            return list(self.individuals)
+
+        # Recalculate ranks and crowding distances across current survivors
+        fronts = fast_non_dominated_sort(self.individuals)
+        for front in fronts:
+            assign_crowding_distance(front)
+
+        selected: List[NSGA2Individual] = []
+        for _ in range(count):
+            winner = crowded_tournament_select(self.individuals, tournament_size=3)
+            selected.append(winner)
+
+        return selected
+
+    def get_pareto_front(self) -> List[NSGA2Individual]:
+        """Returns the active non-dominated frontier (Rank 1)."""
+        if not self.individuals:
+            return []
+        fronts = fast_non_dominated_sort(self.individuals)
+        return fronts[0] if fronts else []
+
+async def persist_individual(db: aiosqlite.Connection, ind: NSGA2Individual, island_id: int, gen: int):
+    """Saves or updates individual state with its NSGA-II frontier metrics."""
+    await db.execute(
+        """
+        INSERT INTO heuristics (
+            id, island_id, generation, code, fitness, wasm_fuel, 
+            phenotype_signature, pareto_rank, crowding_distance
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            pareto_rank = excluded.pareto_rank,
+            crowding_distance = excluded.crowding_distance;
+        """,
+        (
+            ind.id,
+            island_id,
+            gen,
+            ind.code,
+            ind.packing_ratio,
+            ind.fuel_consumed,
+            ind.phenotype_signature,
+            ind.rank,
+            ind.crowding_distance if ind.crowding_distance != float("inf") else 1e9
+        )
+    )
+    await db.commit()
 
 class FunSearchService:
     def __init__(self, num_islands: int = 4):
@@ -27,6 +119,7 @@ class FunSearchService:
         self.top_fitness_score = 0.0
         self.champion_program: Optional[Program] = None
         self.active_islands_count = 0
+        self.nsga2_islands = [FunSearchIsland(i) for i in range(self.num_islands)]
         self._lock = asyncio.Lock()
 
     def get_telemetry(self) -> Dict[str, Any]:
@@ -122,6 +215,25 @@ class FunSearchService:
                             if diag.fitness > self.top_fitness_score:
                                 self.top_fitness_score = diag.fitness
                                 self.champion_program = prog
+
+                        # NSGA-II population management & persistence
+                        try:
+                            fuel = int(getattr(diag, "wasm_fuel", 0) or max(int(getattr(diag, "execution_time_ms", 1.0) * 100), 50))
+                            nsga2_isl = self.nsga2_islands[island.island_id]
+                            h_id = f"h_isl{island.island_id}_gen{island.generation_count}_{fp[:8]}"
+                            nsga2_isl.register_heuristic(
+                                heuristic_id=h_id,
+                                code=mutated_code,
+                                packing_ratio=diag.fitness,
+                                fuel_consumed=fuel,
+                                phenotype_signature=fp
+                            )
+                            async with get_db() as db:
+                                ind_match = next((ind for ind in nsga2_isl.individuals if ind.id == h_id), None)
+                                if ind_match:
+                                    await persist_individual(db, ind_match, island.island_id, island.generation_count + 1)
+                        except Exception as db_err:
+                            logger.debug(f"Could not persist heuristic to db: {db_err}")
 
                         await broker.publish("funsearch_telemetry", self.get_telemetry())
                 except Exception as eval_exc:

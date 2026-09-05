@@ -6,12 +6,19 @@ from typing import Any, Dict, List, Optional
 import aiosqlite
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Security, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import HTMLResponse, JSONResponse
+from dataclasses import asdict
 from config import config
 from agent.auth import verify_api_key, verify_websocket_auth
 from agent.events import broker
+from agent.db import get_db
 from agent.scheduler import task_scheduler
 from agent.funsearch_service import funsearch_service
 from agent.cegis_tracker import cegis_tracker
+from agent.island_profiler import (
+    HeuristicPoint,
+    compute_pareto_frontier,
+    profile_island
+)
 from cegis_verifier import SymbolicContractVerifier
 from agent.formal_verifier import lean_verifier
 from agent.lean_synthesizer import Lean4ProofSynthesizer
@@ -271,6 +278,71 @@ async def trigger_scheduler_now():
         raise HTTPException(status_code=409, detail="Pipeline execution already in flight.")
     asyncio.create_task(task_scheduler.execute_pipeline())
     return {"status": "DISPATCHED", "detail": "Nightly discovery pipeline launched manually."}
+
+# --- NSGA-II & Pareto Profiling Endpoints ---
+@api_router.get("/evolution/pareto-profile")
+async def get_pareto_and_island_profile():
+    points = []
+    try:
+        async with get_db() as db:
+            cursor = await db.execute(
+                """
+                SELECT id, island_id, code, fitness, wasm_fuel, generation, phenotype_signature
+                FROM heuristics
+                WHERE fitness IS NOT NULL AND wasm_fuel IS NOT NULL
+                ORDER BY generation DESC LIMIT 250
+                """
+            )
+            rows = await cursor.fetchall()
+            points = [
+                HeuristicPoint(
+                    id=str(r["id"]),
+                    island_id=r["island_id"],
+                    code=r["code"],
+                    packing_ratio=float(r["fitness"]),
+                    fuel_consumed=int(r["wasm_fuel"]),
+                    generation=r["generation"],
+                    phenotype_signature=r["phenotype_signature"] or "default"
+                )
+                for r in rows
+            ]
+    except Exception as exc:
+        logger.debug(f"Could not load heuristics from db: {exc}")
+
+    if not points and hasattr(funsearch_service, "nsga2_islands"):
+        for isl in funsearch_service.nsga2_islands:
+            for ind in isl.individuals:
+                points.append(
+                    HeuristicPoint(
+                        id=str(ind.id),
+                        island_id=isl.island_id,
+                        code=ind.code,
+                        packing_ratio=float(ind.packing_ratio),
+                        fuel_consumed=int(ind.fuel_consumed),
+                        generation=1,
+                        phenotype_signature=ind.phenotype_signature or "default"
+                    )
+                )
+
+    # Compute global Pareto frontier
+    pareto_frontier = compute_pareto_frontier(points)
+
+    # Compute health per island
+    islands_health = []
+    for island_id in sorted({p.island_id for p in points}):
+        island_history = [
+            {"fitness": p.packing_ratio, "phenotype_signature": p.phenotype_signature}
+            for p in points if p.island_id == island_id
+        ]
+        islands_health.append(profile_island(island_id, island_history))
+
+    return {
+        "total_candidates": len(points),
+        "pareto_frontier_count": len(pareto_frontier),
+        "pareto_points": [asdict(p) for p in pareto_frontier],
+        "all_points": [asdict(p) for p in points],
+        "islands": [asdict(h) for h in islands_health]
+    }
 
 app = FastAPI(title="Continuous Agent")
 app.include_router(api_router)

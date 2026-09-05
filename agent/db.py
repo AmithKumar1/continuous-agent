@@ -157,7 +157,51 @@ CREATE TABLE IF NOT EXISTS evolved_programs (
     origin_island INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 11. NSGA-II Multi-Objective Evolved Heuristics
+CREATE TABLE IF NOT EXISTS heuristics (
+    id TEXT PRIMARY KEY,
+    island_id INTEGER NOT NULL,
+    generation INTEGER NOT NULL,
+    code TEXT NOT NULL,
+    fitness REAL,
+    wasm_fuel INTEGER,
+    phenotype_signature TEXT,
+    pareto_rank INTEGER DEFAULT NULL,
+    crowding_distance REAL DEFAULT NULL,
+    verified BOOLEAN DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_heuristics_island_gen 
+    ON heuristics(island_id, generation DESC);
+
+CREATE INDEX IF NOT EXISTS idx_heuristics_pareto 
+    ON heuristics(island_id, pareto_rank, crowding_distance DESC);
 """
+
+CREATE_TABLES_SQL = SCHEMA
+
+async def apply_migrations(conn: aiosqlite.Connection):
+    """Idempotently adds NSGA-II columns if upgrading an older database schema."""
+    cursor = await conn.execute("PRAGMA table_info(heuristics);")
+    existing_columns = {row["name"] for row in await cursor.fetchall()}
+
+    if existing_columns:
+        if "pareto_rank" not in existing_columns:
+            await conn.execute("ALTER TABLE heuristics ADD COLUMN pareto_rank INTEGER DEFAULT NULL;")
+
+        if "crowding_distance" not in existing_columns:
+            await conn.execute("ALTER TABLE heuristics ADD COLUMN crowding_distance REAL DEFAULT NULL;")
+
+        # Ensure composite index for Pareto-front lookups exists
+        await conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_heuristics_pareto 
+            ON heuristics(island_id, pareto_rank, crowding_distance DESC);
+            """
+        )
+        await conn.commit()
 
 class Database:
     def __init__(self, db_path: str = "agent_state.db"):
@@ -168,12 +212,20 @@ class Database:
         async with aiosqlite.connect(self.db_path, timeout=10.0) as db:
             await configure_connection(db)
             await db.executescript(SCHEMA)
+            await apply_migrations(db)
             await db.execute(
                 "INSERT OR IGNORE INTO agent_state (id, iteration, status) VALUES (1, 0, 'INITIALIZING')"
             )
             await db.commit()
-            logger.info("SQLite schema initialized with WAL mode & FTS5.")
+            logger.info("SQLite schema initialized with WAL mode, FTS5 & NSGA-II columns.")
 
     async def init_schema(self):
         """Initializes tables, triggers, and seeds the singleton state row (alias for init_db)."""
         await self.init_db()
+
+async def init_db(db_path: Optional[str] = None):
+    """Initializes tables and executes schema migrations."""
+    path = db_path or getattr(config, "DB_PATH", "agent_state.db")
+    db = Database(path)
+    await db.init_db()
+

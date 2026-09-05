@@ -244,7 +244,19 @@ Continuous Agent is benchmarked against classic online bin packing suites (**Fal
 | `GET` | `/api/scheduler/status` | Cron schedule status and live countdown |
 | `POST` | `/api/scheduler/update` | Update cron schedule pattern |
 | `POST` | `/api/scheduler/trigger-now`| Launch overnight discovery pipeline immediately |
+| `GET` | `/api/evolution/pareto-profile` | Live non-dominated Pareto frontier and island entropy diagnostics |
 | `WS` | `/ws/telemetry` | Real-time WebSocket event stream |
+
+---
+
+## 🧬 NSGA-II Multi-Objective Optimization & Island Profiling
+
+- **Bi-Objective Pareto Dominance**: Evaluates heuristics balancing **Packing Ratio** ($f_{\text{pack}} \in [0, 1]$, maximize) against **WASM Instruction Fuel** ($f_{\text{cost}}$, minimize) without arbitrary scalar weights.
+- **Fast Non-Dominated Sorting & Crowding Distance**: Partitions populations into Pareto fronts ($F_1, F_2, \dots$) and preserves diverse boundary trade-offs via crowding distance metrics.
+- **Phenotypic Shannon Entropy Decay**: Tracks discrete decision cluster distribution over sliding generation windows; detects diversity collapse and flatlined fitness velocity:
+  - `H < H_threshold` $\rightarrow$ triggers **Ring Migration** between islands.
+  - Severe stagnation ($> 2W$ generations) $\rightarrow$ triggers **Cataclysmic Paradigm Restart**.
+- **Automated Schema Migration**: `scripts/migrate_nsga2_schema.py` provides non-destructive online upgrades adding `pareto_rank`, `crowding_distance`, and composite index `idx_heuristics_pareto`.
 
 ---
 
