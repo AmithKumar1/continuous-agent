@@ -1,1 +1,1 @@
-# Unit and integration test package for continuous-agent
+# Unit and integration test package for Continuous Agent

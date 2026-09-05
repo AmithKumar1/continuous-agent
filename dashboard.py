@@ -265,7 +265,7 @@ async def trigger_scheduler_now():
     asyncio.create_task(task_scheduler.execute_pipeline())
     return {"status": "DISPATCHED", "detail": "Nightly discovery pipeline launched manually."}
 
-app = FastAPI(title="Autonomous Continuous Discovery Agent")
+app = FastAPI(title="Continuous Agent")
 app.include_router(api_router)
 
 # Forward EventBroker events to WebSocket clients
@@ -298,7 +298,7 @@ async def dashboard_ui():
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Autonomous Discovery Agent — Neuro-Symbolic Control Deck</title>
+  <title>Continuous Agent — Neuro-Symbolic Control Deck</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -327,7 +327,7 @@ async def dashboard_ui():
     <div class="flex items-center gap-3">
       <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
       <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-        <span>CONTINUOUS DISCOVERY AGENT</span>
+        <span>CONTINUOUS AGENT</span>
         <span class="text-xs px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800 font-mono">v1.0.0-PROD</span>
       </h1>
     </div>

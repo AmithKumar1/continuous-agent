@@ -1,5 +1,5 @@
 # ==============================================================================
-# Continuous Discovery Agent Automated Setup Script (Windows PowerShell)
+# Continuous Agent Automated Setup Script (Windows PowerShell)
 # ==============================================================================
 
 $ErrorActionPreference = "Stop"

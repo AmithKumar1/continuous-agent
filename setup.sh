@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Continuous Discovery Agent Automated Setup Script
+# Continuous Agent Automated Setup Script
 # Supported: Ubuntu/Debian, Fedora, Arch, macOS
 # ==============================================================================
 
