@@ -258,6 +258,25 @@ Continuous Agent is benchmarked against classic online bin packing suites (**Fal
 
 ---
 
+## 🗄️ Storage Concurrency & Disaster Recovery
+
+- **SQLite WAL Mode & Concurrency**: `agent_state.db` runs with `PRAGMA journal_mode = WAL`, `busy_timeout = 10000`, and `synchronous = NORMAL`, enabling lock-free concurrent reads during heavy evolutionary mutation batches.
+- **Zero-Downtime Hot Backups**: `scripts/backup_db.py` leverages SQLite's native `backup()` API with incremental 250-page slices, PRAGMA integrity verification, gzip compression, and rolling 14-snapshot rotation.
+- **Automated Systemd Supervision**: Automated 6-hour backups scheduled via `deploy/continuous-agent-backup.service` and `deploy/continuous-agent-backup.timer`.
+- **Safe Disaster Recovery**: `scripts/restore_db.py` executes staged restore in isolated sandboxes with pre-restore active archival, `--dry-run` schema census, and automated rollback upon swap failure:
+  ```bash
+  # Inspect snapshot without modifying active state
+  python scripts/restore_db.py --dry-run
+
+  # Restore latest snapshot with confirmation prompt
+  python scripts/restore_db.py
+
+  # Automated CI/CD restore
+  python scripts/restore_db.py --source backups/agent_state_20260905_060000Z.db.gz --yes
+  ```
+
+---
+
 ## 📄 License
 
 MIT License. See [LICENSE](LICENSE) for details.
