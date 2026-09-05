@@ -66,9 +66,9 @@ flowchart TD
 
 ---
 
-## 🚀 One-Command Automated Setup (Linux / macOS)
+## 🚀 Quickstart
 
-Run the included bootstrapping script to install Lean 4 via `elan`, configure a virtual environment, install Python requirements, build the optional Docker evaluator image, and run pre-flight diagnostics:
+Clone the repository and run the automated bootstrap script:
 
 ```bash
 git clone https://github.com/AmithKumar1/continuous-agent.git
@@ -77,40 +77,32 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-Then edit `.env` with your API keys and launch:
+*(Windows users can run `.\setup.ps1` in PowerShell)*
+
+### 1. Configure Secrets
+
+Edit the generated `.env` file with your API credentials:
+
+```bash
+nano .env  # Add your OPENAI_API_KEY, AGENT_API_TOKEN, etc.
+```
+
+### 2. Launch the Discovery Agent
+
+Activate the isolated environment and boot the FastAPI control dashboard:
 
 ```bash
 source .venv/bin/activate
 python main.py
 ```
 
----
+Open **`http://localhost:8000`** in your browser to access the live telemetry pipeline, interactive Z3 invariant probe, and evolutionary island controls.
 
-## 📦 How to Run (2 Setup Paths)
+### 3. Alternative: Run via Docker Compose
 
-### Path A: Docker (Recommended)
-
-The bundled `Dockerfile` automatically installs `elan`, builds the Lean 4 compiler, and installs `z3` and `wasmtime`.
-
-1. **Clone and create the environment file**:
-   ```bash
-   git clone https://github.com/AmithKumar1/continuous-agent.git
-   cd continuous-agent
-   cp .env.example .env
-   # Add your OPENAI_API_KEY, AGENT_API_TOKEN, etc.
-   ```
-
-2. **Build the evaluator image used for container sandboxing**:
-   ```bash
-   docker build -t algo-sandbox:latest -f Dockerfile.evaluator .
-   ```
-
-3. **Launch the container stack**:
-   ```bash
-   docker compose up --build -d
-   ```
-
-Open your browser at `http://localhost:8000`.
+```bash
+docker compose up --build -d
+```
 
 ---
 

@@ -1,14 +1,46 @@
+# Environment & Secrets
 .env
+.env.local
+*.pem
+*.key
+
+# Virtual Environments & Python
+.venv/
+env/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local Agent State & Databases
 agent_state.db
 agent_state.db-journal
 agent_state.db-wal
 agent_state.db-shm
-chroma_data/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
-.DS_Store
+*.sqlite3
+logs/
 *.log
+chroma_data/
+
+# Lean 4 & Lake Build Artifacts
+.lake/
+build/
+*.olean
+*.ilean
+*.c
+
+# Temporary Evaluation Scratchpads & Output
+tmp/
 scratch/
+heuristics/temp_*
+theorems/temp_*
+
+# IDE & OS Metadata
+.DS_Store
+.idea/
+.vscode/
+*.swp

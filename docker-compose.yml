@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   agent:
     build:
@@ -11,21 +9,21 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    volumes:
+      # Persist the SQLite evolution database across container restarts
+      - agent_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock # Optional: allows fallback gVisor sibling containers
     environment:
       - DB_PATH=/app/data/agent_state.db
-      - AGENT_DB_PATH=/app/data/agent_state.db
-    volumes:
-      - agent_data:/app/data
-      - chroma_data:/app/chroma_data
-
-  zap:
-    image: ghcr.io/zaproxy/zaproxy:stable
-    container_name: zap-daemon
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
+      - DASHBOARD_HOST=0.0.0.0
+      - DASHBOARD_PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/scheduler/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
 volumes:
   agent_data:
-  chroma_data:
+    driver: local
