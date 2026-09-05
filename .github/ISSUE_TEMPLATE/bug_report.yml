@@ -1,0 +1,34 @@
+name: "🐛 Bug Report"
+description: "File a bug report for Continuous Agent"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue with Continuous Agent!
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps or commands to reproduce the behavior.
+      placeholder: |
+        1. Run `python main.py`
+        2. Send payload to endpoint `/api/...`
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment & Diagnostic Output
+      description: Please include the output of `python preflight.py`.
+      render: shell
+    validations:
+      required: false

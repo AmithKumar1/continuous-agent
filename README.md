@@ -1,5 +1,15 @@
 # 🤖 Continuous Agent
 
+<p align="center">
+  <a href="https://github.com/AmithKumar1/continuous-agent/actions/workflows/ci.yml"><img src="https://github.com/AmithKumar1/continuous-agent/actions/workflows/ci.yml/badge.svg" alt="CI Pipeline" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.14-blue?logo=python" alt="Python" /></a>
+  <a href="https://leanprover.github.io/"><img src="https://img.shields.io/badge/Lean_4-Formal_Prover-purple?logo=lean" alt="Lean 4" /></a>
+  <a href="https://github.com/Z3Prover/z3"><img src="https://img.shields.io/badge/Z3-SMT_Solver-orange" alt="Z3 Solver" /></a>
+  <a href="https://wasmtime.dev/"><img src="https://img.shields.io/badge/Wasmtime-JIT_Sandbox-654FF0?logo=webassembly" alt="Wasmtime" /></a>
+  <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi" alt="FastAPI" /></a>
+</p>
+
 > An autonomous neuro-symbolic continuous discovery system integrating a continuous execution heartbeat, cognitive memory with recursive compaction, RRF hybrid RAG search, multi-island evolutionary search (FunSearch), Counterexample-Guided Inductive Synthesis (CEGIS) with Z3, formal verification via Lean 4, dual-tier WASM/gVisor sandboxing, and automated GitHub GitOps PR publishing.
 
 ---

@@ -1,0 +1,29 @@
+name: "💡 Feature Request"
+description: "Suggest a new idea or enhancement for Continuous Agent"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a feature idea or optimization for Continuous Agent? Let us know!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Opportunity
+      description: What problem are you trying to solve, or what opportunity does this feature address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Considered Alternatives
+      description: Any alternative solutions or features you considered?
+    validations:
+      required: false
