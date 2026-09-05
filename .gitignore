@@ -22,6 +22,8 @@ agent_state.db-journal
 agent_state.db-wal
 agent_state.db-shm
 *.sqlite3
+backups/
+*.db.gz
 logs/
 *.log
 chroma_data/

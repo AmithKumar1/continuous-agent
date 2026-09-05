@@ -1,0 +1,14 @@
+[Unit]
+Description=Continuous Agent SQLite Hot Backup & Rotation
+After=network.target
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/continuous-agent
+Environment="PATH=/home/deploy/continuous-agent/.venv/bin:/usr/bin:/bin"
+EnvironmentFile=/home/deploy/continuous-agent/.env
+ExecStart=/home/deploy/continuous-agent/.venv/bin/python scripts/backup_db.py
+StandardOutput=journal
+StandardError=journal

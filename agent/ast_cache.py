@@ -6,6 +6,7 @@ import sqlite3
 import threading
 from typing import Any, Dict, Optional, Tuple
 from config import config
+from agent.db import configure_sync_connection
 
 logger = logging.getLogger("ASTCache")
 
@@ -55,7 +56,8 @@ class ASTEvaluationCache:
 
     def _init_db(self):
         try:
-            with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+            with sqlite3.connect(self.db_path, timeout=10.0) as conn:
+                configure_sync_connection(conn)
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS ast_memo_cache (
                         ast_hash TEXT PRIMARY KEY,
@@ -77,7 +79,8 @@ class ASTEvaluationCache:
 
         # SQLite fallback
         try:
-            with sqlite3.connect(self.db_path, timeout=3.0) as conn:
+            with sqlite3.connect(self.db_path, timeout=10.0) as conn:
+                configure_sync_connection(conn)
                 cursor = conn.cursor()
                 cursor.execute(
                     "SELECT fitness, diagnostic_json FROM ast_memo_cache WHERE ast_hash = ?",
@@ -105,7 +108,8 @@ class ASTEvaluationCache:
             self._memory_cache[ast_hash] = (fitness, diag)
 
         try:
-            with sqlite3.connect(self.db_path, timeout=3.0) as conn:
+            with sqlite3.connect(self.db_path, timeout=10.0) as conn:
+                configure_sync_connection(conn)
                 conn.execute("""
                     INSERT OR REPLACE INTO ast_memo_cache (ast_hash, canonical_code, fitness, diagnostic_json)
                     VALUES (?, ?, ?, ?)
@@ -119,7 +123,8 @@ class ASTEvaluationCache:
             self._memory_cache.clear()
         if clear_db:
             try:
-                with sqlite3.connect(self.db_path, timeout=3.0) as conn:
+                with sqlite3.connect(self.db_path, timeout=10.0) as conn:
+                    configure_sync_connection(conn)
                     conn.execute("DELETE FROM ast_memo_cache")
                     conn.commit()
             except Exception as e:

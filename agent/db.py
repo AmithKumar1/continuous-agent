@@ -1,8 +1,43 @@
 import aiosqlite
+import sqlite3
 import logging
-from typing import Any, Dict, List, Optional
+from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator, Dict, List, Optional
+from config import config
 
 logger = logging.getLogger("Database")
+
+PRAGMAS = [
+    "PRAGMA journal_mode = WAL;",        # Readers don't block writers; writers don't block readers
+    "PRAGMA busy_timeout = 10000;",      # Wait up to 10s for locks to clear before raising OperationalError
+    "PRAGMA synchronous = NORMAL;",      # Safe in WAL mode, avoids disk sync bottlenecks
+    "PRAGMA cache_size = -64000;",       # 64 MB memory cache allocation
+    "PRAGMA wal_autocheckpoint = 1000;", # Checkpoint WAL back to DB every 1,000 pages
+    "PRAGMA foreign_keys = ON;",
+]
+
+async def configure_connection(conn: aiosqlite.Connection):
+    """Applies concurrency and performance PRAGMAs to an active connection."""
+    conn.row_factory = aiosqlite.Row
+    for pragma in PRAGMAS:
+        await conn.execute(pragma)
+
+def configure_sync_connection(conn: sqlite3.Connection):
+    """Applies concurrency PRAGMAs to synchronous connections (used by backups and migrations)."""
+    conn.row_factory = sqlite3.Row
+    for pragma in PRAGMAS:
+        conn.execute(pragma)
+
+@asynccontextmanager
+async def get_db(db_path: Optional[str] = None) -> AsyncGenerator[aiosqlite.Connection, None]:
+    """Async context manager providing a concurrency-hardened SQLite connection."""
+    path = db_path or getattr(config, "DB_PATH", "agent_state.db")
+    conn = await aiosqlite.connect(path, timeout=10.0)
+    await configure_connection(conn)
+    try:
+        yield conn
+    finally:
+        await conn.close()
 
 SCHEMA = """
 PRAGMA journal_mode = WAL;
@@ -130,7 +165,8 @@ class Database:
 
     async def init_db(self):
         """Initializes tables, triggers, and seeds the singleton state row."""
-        async with aiosqlite.connect(self.db_path) as db:
+        async with aiosqlite.connect(self.db_path, timeout=10.0) as db:
+            await configure_connection(db)
             await db.executescript(SCHEMA)
             await db.execute(
                 "INSERT OR IGNORE INTO agent_state (id, iteration, status) VALUES (1, 0, 'INITIALIZING')"
