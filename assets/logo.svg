@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" width="420" height="120">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#38bdf8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="420" height="120" rx="16" fill="#0b0f19" stroke="#1e293b" stroke-width="1.5" />
+  <text x="32" y="68" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="800" fill="url(#grad)" letter-spacing="-0.5">
+    Continuous
+  </text>
+  <text x="34" y="96" font-family="ui-monospace, monospace" font-size="13" font-weight="600" fill="#94a3b8" letter-spacing="1.5">
+    FORMAL DISCOVERY ENGINE
+  </text>
+  <g transform="translate(345, 60)">
+    <circle cx="0" cy="0" r="26" fill="none" stroke="#6366f1" stroke-width="3" stroke-dasharray="6 4">
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="8s" repeatCount="indefinite" />
+    </circle>
+    <polygon points="-6,-10 12,0 -6,10" fill="#38bdf8" />
+  </g>
+</svg>

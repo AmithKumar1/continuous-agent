@@ -60,5 +60,8 @@ class Settings:
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN", "")
     GITHUB_REPO: str = os.getenv("GITHUB_REPO", "owner/repo")
     GITHUB_BASE_BRANCH: str = os.getenv("GITHUB_BASE_BRANCH", "main")
+    # Memory Compaction
+    MEMORY_COMPACTION_THRESHOLD: int = int(os.getenv("MEMORY_COMPACTION_THRESHOLD", "12"))
+    MEMORY_COMPACTION_MODEL: str = os.getenv("MEMORY_COMPACTION_MODEL", "gpt-4o-mini")
 
 config = Settings()

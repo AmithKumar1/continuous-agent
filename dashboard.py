@@ -53,13 +53,17 @@ ws_manager = ConnectionManager()
 api_router = APIRouter(prefix="/api", dependencies=[Depends(verify_api_key)])
 
 # --- Lifecycle Endpoints ---
+@api_router.get("/state")
 @api_router.get("/status")
 async def get_status():
-    async with aiosqlite.connect(config.DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT iteration, status, last_heartbeat FROM agent_state WHERE id = 1") as c:
-            row = await c.fetchone()
-            return dict(row) if row else {"iteration": 0, "status": "UNKNOWN"}
+    try:
+        async with aiosqlite.connect(config.DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT iteration, status, last_heartbeat FROM agent_state WHERE id = 1") as c:
+                row = await c.fetchone()
+                return dict(row) if row else {"iteration": 0, "status": "UNKNOWN"}
+    except Exception:
+        return {"iteration": 0, "status": "STARTING", "last_heartbeat": 0.0}
 
 @api_router.post("/pause")
 async def pause_agent():
@@ -183,12 +187,14 @@ async def get_cegis_telemetry():
 async def get_cegis_events():
     return cegis_tracker.get_recent_events()
 
+@api_router.post("/cegis/verify-custom")
 @api_router.post("/cegis/probe")
 async def run_cegis_probe(payload: VerificationRequest):
+    code_str = payload.get_code()
     verifier = SymbolicContractVerifier(timeout_ms=payload.timeout_ms or 1500)
     loop = asyncio.get_running_loop()
     start_time = time.time()
-    is_verified, counterexample = await loop.run_in_executor(None, verifier.verify, payload.python_code)
+    is_verified, counterexample = await loop.run_in_executor(None, verifier.verify, code_str)
     elapsed_ms = (time.time() - start_time) * 1000
 
     ce_dict = None
@@ -214,6 +220,7 @@ async def run_cegis_probe(payload: VerificationRequest):
     return {
         "verified": is_verified,
         "counterexample": ce_dict,
+        "invariant_name": counterexample.invariant_name if counterexample else None,
         "solve_time_ms": round(elapsed_ms, 2)
     }
 
@@ -623,7 +630,13 @@ async def dashboard_ui():
           <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col">
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-mono text-slate-400">INPUT HEURISTIC</span>
-              <button onclick="loadSingularityPreset()" class="text-[10px] text-blue-400 hover:underline">Load Presets</button>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold mr-1">Presets:</span>
+                <button onclick="loadProbePreset('singularity')" class="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800/60 hover:bg-rose-900/60 transition">Singularity</button>
+                <button onclick="loadProbePreset('linear')" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">Linear</button>
+                <button onclick="loadProbePreset('quadratic')" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">Quadratic</button>
+                <button onclick="loadProbePreset('ratio')" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 hover:bg-emerald-900/60 transition">Ratio</button>
+              </div>
             </div>
             <textarea id="cegis-input-code" rows="5" class="bg-slate-900 border border-slate-700 rounded p-2 text-xs font-mono text-emerald-400 focus:outline-none">def priority(item: float, bin_capacity: float) -> float:
     return item / (bin_capacity - item)</textarea>
@@ -1317,8 +1330,34 @@ async def dashboard_ui():
       }
     }
 
+    const PROBE_PRESETS = {
+      singularity: `def priority(item: float, bin_capacity: float) -> float:
+    # Bug: Division by zero when a bin has remaining space equal to item
+    return 1.0 / (bin_capacity - item)`,
+
+      linear: `def priority(item: float, bin_capacity: float) -> float:
+    # Linear: prioritize tight fits without division
+    gap = bin_capacity - item
+    return 100.0 - gap`,
+
+      quadratic: `def priority(item: float, bin_capacity: float) -> float:
+    # Quadratic: heavily penalize larger residual gaps
+    gap = bin_capacity - item
+    return 1000.0 / ((gap * gap) + 0.01)`,
+
+      ratio: `def priority(item: float, bin_capacity: float) -> float:
+    # Fill Ratio: relative proportion of item size to remaining capacity
+    return item / (bin_capacity + 0.001)`
+    };
+
+    function loadProbePreset(name) {
+      if (PROBE_PRESETS[name]) {
+        document.getElementById('cegis-input-code').value = PROBE_PRESETS[name];
+      }
+    }
+
     function loadSingularityPreset() {
-      document.getElementById('cegis-input-code').value = "def priority(item: float, bin_capacity: float) -> float:\n    # First-Fit descending ratio\n    return item / bin_capacity";
+      loadProbePreset('singularity');
     }
 
     // --- Core Memory & Heuristics ---
@@ -1422,8 +1461,25 @@ async def dashboard_ui():
       fetchInitialFunSearch();
       fetchCoreMemory();
       fetchHeuristics();
+
+      // Tooltip listener
+      const tooltip = document.getElementById('metric-tooltip');
+      document.addEventListener('mouseover', (e) => {
+        const target = e.target.closest('[data-tooltip]');
+        if (!target || !tooltip) {
+          if (tooltip) tooltip.style.opacity = '0';
+          return;
+        }
+        tooltip.textContent = target.dataset.tooltip;
+        const rect = target.getBoundingClientRect();
+        tooltip.style.left = `${rect.left + window.scrollX}px`;
+        tooltip.style.top = `${rect.bottom + window.scrollY + 6}px`;
+        tooltip.style.opacity = '1';
+      });
     });
   </script>
+  <!-- Single persistent tooltip container -->
+  <div id="metric-tooltip" class="fixed pointer-events-none opacity-0 transition-opacity duration-150 bg-slate-950/95 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-md shadow-2xl z-50 font-mono"></div>
 </body>
 </html>
 """

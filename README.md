@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Continuous Agent Logo" width="160" />
+  <img src="assets/logo.svg" alt="Continuous Agent Logo" width="420" />
 </p>
 
 <h1 align="center">Continuous Agent</h1>

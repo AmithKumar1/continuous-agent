@@ -44,7 +44,7 @@ class CognitiveMemoryStore:
     def __init__(self, db_path: str = "agent_state.db"):
         self.db_path = db_path
         self.client = AsyncOpenAI(api_key=config.API_KEY) if config.API_KEY else None
-        self.compaction_threshold = 12
+        self.compaction_threshold = config.MEMORY_COMPACTION_THRESHOLD
         self._initialized = False
 
     async def _ensure_schema(self, db: aiosqlite.Connection):
@@ -164,7 +164,7 @@ class CognitiveMemoryStore:
         )
 
         response = await self.client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=config.MEMORY_COMPACTION_MODEL,
             messages=[
                 {"role": "system", "content": "You are a memory consolidation engine. Compact events into dense factual statements."},
                 {"role": "user", "content": compaction_prompt}

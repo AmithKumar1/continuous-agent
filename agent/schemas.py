@@ -51,8 +51,12 @@ class ScheduleUpdateRequest(BaseModel):
     cron_expression: str = Field(..., description="Standard 5-part cron pattern, e.g., '0 2 * * *'")
 
 class VerificationRequest(BaseModel):
-    python_code: str
+    python_code: Optional[str] = None
+    code: Optional[str] = None
     timeout_ms: Optional[int] = 1500
+
+    def get_code(self) -> str:
+        return self.python_code or self.code or ""
 
 class SynthesisRequest(BaseModel):
     python_code: str
