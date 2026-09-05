@@ -1,0 +1,45 @@
+name: Continuous Discovery Agent CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    name: Build & Verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install System Dependencies & Lean 4 (via elan)
+        run: |
+          sudo apt-get update && sudo apt-get install -y curl git build-essential
+          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain leanprover/lean4:stable
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          pip install -r requirements.txt
+
+      - name: Verify Python Compilation (Zero Syntax Errors)
+        run: |
+          python -c "import pathlib, py_compile; [py_compile.compile(str(p), doraise=True) for p in pathlib.Path('.').rglob('*.py') if not any(x in str(p) for x in ['__pycache__', '.pytest_cache', 'scratch'])]"
+
+      - name: Run Pre-Flight Diagnostics
+        run: |
+          python preflight.py
+
+      - name: Run Test Suite
+        run: |
+          python -m pytest tests/ -v

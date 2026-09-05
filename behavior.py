@@ -43,3 +43,10 @@ def get_behavioral_fingerprint(
     signature_bytes = bytes(decision_log)
     fingerprint = hashlib.sha256(signature_bytes).hexdigest()
     return fingerprint, True
+
+def compute_behavioral_distance(fp_a: str, fp_b: str) -> float:
+    if fp_a == fp_b:
+        return 0.0
+    mismatches = sum(c1 != c2 for c1, c2 in zip(fp_a, fp_b))
+    return mismatches / max(len(fp_a), len(fp_b), 1)
+

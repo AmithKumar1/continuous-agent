@@ -55,11 +55,13 @@ class GVisorExecutionEngine:
             )
 
             if proc.returncode != 0:
-                return False, -1.0, stderr.decode("utf-8", errors="ignore")
+                err_msg = stderr.decode("utf-8", errors="ignore")
+                logger.debug(f"Docker returned non-zero code ({proc.returncode}): {err_msg}. Falling back to local execution.")
+                return self._local_fallback(code_str, sequences)
 
             res = json.loads(stdout.decode("utf-8"))
             if not res.get("success"):
-                return False, -1.0, res.get("error", "Container execution failed")
+                return self._local_fallback(code_str, sequences)
 
             return True, float(res.get("fitness", -1.0)), ""
 

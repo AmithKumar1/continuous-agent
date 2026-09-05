@@ -11,10 +11,12 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - DB_PATH=/app/data/agent_state.db
+      - AGENT_DB_PATH=/app/data/agent_state.db
     volumes:
       - agent_data:/app/data
-      - ./agent_state.db:/app/agent_state.db
-      - ./chroma_data:/app/chroma_data
+      - chroma_data:/app/chroma_data
 
   zap:
     image: ghcr.io/zaproxy/zaproxy:stable
@@ -26,3 +28,4 @@ services:
 
 volumes:
   agent_data:
+  chroma_data:

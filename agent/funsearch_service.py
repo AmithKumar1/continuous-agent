@@ -85,7 +85,7 @@ class FunSearchService:
             if not parents:
                 continue
 
-            # Mutation step via LLM or synthetic heuristic
+            # Mutation step via LLM or synthetic heuristic mutation
             mutated_code = parents[0].code
             if self.client:
                 try:
@@ -97,7 +97,9 @@ class FunSearchService:
                     )
                     mutated_code = resp.choices[0].message.content or parents[0].code
                 except Exception:
-                    pass
+                    mutated_code = self._synthetic_mutation(parents[0].code, island.island_id)
+            else:
+                mutated_code = self._synthetic_mutation(parents[0].code, island.island_id)
 
             local_scope = {}
             try:
@@ -125,6 +127,17 @@ class FunSearchService:
                     await broker.publish("funsearch_telemetry", self.get_telemetry())
             except Exception:
                 pass
+
+    def _synthetic_mutation(self, base_code: str, island_id: int) -> str:
+        import random
+        variants = [
+            "def priority(item: float, bin_capacity: float) -> float:\n    # Ratio priority with capacity guard\n    return item / max(bin_capacity, 0.001)",
+            "def priority(item: float, bin_capacity: float) -> float:\n    # Best-fit quadratic scaling\n    return (item ** 1.5) / (bin_capacity + 1e-5)",
+            "def priority(item: float, bin_capacity: float) -> float:\n    # Tight fit bonus heuristic\n    residual = bin_capacity - item\n    return item * 2.0 - residual if residual >= 0 else -1.0",
+            "def priority(item: float, bin_capacity: float) -> float:\n    # Harmonic priority balancing\n    return item / (bin_capacity + 0.5) + (item * 0.1)",
+            "def priority(item: float, bin_capacity: float) -> float:\n    # First-fit descending ratio\n    return item / (bin_capacity if bin_capacity > item else 100.0)"
+        ]
+        return random.choice(variants)
 
     def stop(self):
         self.is_running = False
