@@ -1,6 +1,6 @@
 import ast
 from fractions import Fraction
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set, Optional
 
 class PythonToLean4Transpiler(ast.NodeVisitor):
     def __init__(self):

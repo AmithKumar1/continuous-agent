@@ -1,6 +1,6 @@
 import asyncio
 import httpx
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 from agent.schemas import (
     PortScanArgs, SecurityHeadersArgs, ZapScanArgs,
     UpdateCoreMemoryArgs, SearchMemoryArgs, VerifyLean4Args,
