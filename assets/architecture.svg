@@ -1,0 +1,228 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 660" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Connector Line Gradients -->
+    <linearGradient id="cyanBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+    <linearGradient id="blueCyan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+    <linearGradient id="amberRose" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.7" />
+    </linearGradient>
+
+    <!-- Drop Shadows and Glow Filters -->
+    <filter id="glow-cyan" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#38bdf8" flood-opacity="0.25" />
+    </filter>
+    <filter id="glow-indigo" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#6366f1" flood-opacity="0.25" />
+    </filter>
+    <filter id="glow-emerald" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#10b981" flood-opacity="0.25" />
+    </filter>
+    <filter id="glow-purple" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#a855f7" flood-opacity="0.25" />
+    </filter>
+    <filter id="glow-amber" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#f59e0b" flood-opacity="0.25" />
+    </filter>
+
+    <!-- Arrow Marker -->
+    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#a855f7" />
+    </marker>
+    <marker id="arrow-rose" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f43f5e" />
+    </marker>
+  </defs>
+
+  <style>
+    .flow-dash {
+      stroke-dasharray: 8 6;
+      animation: flowAnim 1.4s linear infinite;
+    }
+    .flow-dash-reverse {
+      stroke-dasharray: 6 5;
+      animation: flowRevAnim 1.6s linear infinite;
+    }
+    @keyframes flowAnim {
+      from { stroke-dashoffset: 28; }
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes flowRevAnim {
+      from { stroke-dashoffset: 0; }
+      to { stroke-dashoffset: 22; }
+    }
+    .card-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .card-item {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+    }
+  </style>
+
+  <!-- Canvas Background -->
+  <rect width="1080" height="660" rx="16" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="1.5" />
+
+  <!-- Subtle Blueprint Grid Pattern -->
+  <g opacity="0.04">
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#94a3b8" stroke-width="1" />
+    </pattern>
+    <rect width="1080" height="660" fill="url(#grid)" />
+  </g>
+
+  <!-- ==================== CONNECTING PIPELINE PATHS ==================== -->
+  <!-- Top Deck Down to Horizontal Bus -->
+  <path d="M 540 102 L 540 130" stroke="#38bdf8" stroke-width="2.5" />
+  
+  <!-- Horizontal Distribution Bus -->
+  <path d="M 240 130 L 840 130" stroke="url(#cyanBlue)" stroke-width="2" />
+  
+  <!-- Bus down to Loop and Scheduler -->
+  <path d="M 240 130 L 240 160" stroke="#38bdf8" stroke-width="2.5" class="flow-dash" marker-end="url(#arrow-cyan)" />
+  <path d="M 840 130 L 840 160" stroke="#6366f1" stroke-width="2.5" class="flow-dash" marker-end="url(#arrow-cyan)" />
+
+  <!-- Middle Distribution to 3 Pillars -->
+  <!-- From Continuous Agent Loop to Cognitive Memory & FunSearch -->
+  <path d="M 200 262 L 200 330" stroke="#38bdf8" stroke-width="2.5" class="flow-dash" marker-end="url(#arrow-cyan)" />
+  <path d="M 280 262 C 280 295, 480 295, 480 330" fill="none" stroke="#38bdf8" stroke-width="2" class="flow-dash" marker-end="url(#arrow-cyan)" />
+
+  <!-- From Scheduler to FunSearch and CEGIS -->
+  <path d="M 800 262 C 800 295, 600 295, 600 330" fill="none" stroke="#a855f7" stroke-width="2" class="flow-dash" marker-end="url(#arrow-purple)" />
+  <path d="M 880 262 L 880 330" stroke="#a855f7" stroke-width="2.5" class="flow-dash" marker-end="url(#arrow-purple)" />
+
+  <!-- Evolutionary Engine down to Sandboxing -->
+  <path d="M 540 457 L 540 515" stroke="#10b981" stroke-width="2.5" class="flow-dash" marker-end="url(#arrow-emerald)" />
+
+  <!-- Neuro-Symbolic & CEGIS down to GitOps -->
+  <path d="M 880 457 L 880 515" stroke="#a855f7" stroke-width="2.5" class="flow-dash" marker-end="url(#arrow-purple)" />
+
+  <!-- CEGIS Adversarial Invariant Feedback Loop (Z3 Refutation to Islands) -->
+  <path d="M 725 395 C 685 395, 685 395, 702 395" fill="none" stroke="url(#amberRose)" stroke-width="2.5" class="flow-dash-reverse" marker-end="url(#arrow-rose)" />
+  <rect x="670" y="375" width="40" height="18" rx="4" fill="#450a0a" stroke="#f43f5e" stroke-width="1" />
+  <text x="690" y="387" fill="#fca5a5" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="middle">CEGIS</text>
+
+  <!-- ==================== TOP CARD: FASTAPI CONTROL DECK ==================== -->
+  <g filter="url(#glow-cyan)">
+    <rect x="310" y="24" width="460" height="78" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
+    <circle cx="334" cy="50" r="7" fill="#10b981" />
+    <circle cx="334" cy="50" r="11" fill="none" stroke="#10b981" stroke-width="1.5" opacity="0.6">
+      <animate attributeName="r" values="7;13;7" dur="2s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite" />
+    </circle>
+    <text x="352" y="52" fill="#ffffff" font-size="15" class="card-title">FastAPI Real-Time Control Deck</text>
+    <text x="352" y="76" fill="#94a3b8" font-size="11" font-family="monospace">WebSockets • SSE Telemetry • CEGIS Prover • Lean 4 Prover</text>
+  </g>
+
+  <!-- ==================== MIDDLE ROW CARDS ==================== -->
+  <!-- Continuous Agent Loop -->
+  <g filter="url(#glow-cyan)">
+    <rect x="70" y="160" width="340" height="102" rx="10" fill="#0f172a" stroke="#38bdf8" stroke-width="1.75" />
+    <path d="M 70 160 h 340 v 28 h -340 z" fill="#1e293b" rx="10" />
+    <rect x="70" y="180" width="340" height="8" fill="#1e293b" />
+    <text x="86" y="179" fill="#38bdf8" font-size="12" class="card-title">⚙️ Continuous Agent Loop</text>
+    <text x="88" y="208" fill="#cbd5e1" class="card-item">• Asynchronous Heartbeat Cycle</text>
+    <text x="88" y="226" fill="#cbd5e1" class="card-item">• Multi-Turn Parallel Tool Dispatch</text>
+    <text x="88" y="244" fill="#cbd5e1" class="card-item">• Token Circuit Breaker &amp; Backoff</text>
+  </g>
+
+  <!-- Task Scheduler (Cron) -->
+  <g filter="url(#glow-indigo)">
+    <rect x="670" y="160" width="340" height="102" rx="10" fill="#0f172a" stroke="#6366f1" stroke-width="1.75" />
+    <path d="M 670 160 h 340 v 28 h -340 z" fill="#1e293b" rx="10" />
+    <rect x="670" y="180" width="340" height="8" fill="#1e293b" />
+    <text x="686" y="179" fill="#818cf8" font-size="12" class="card-title">⏱️ Task Scheduler (Cron)</text>
+    <text x="688" y="208" fill="#cbd5e1" class="card-item">• Live UI Countdown Deck</text>
+    <text x="688" y="226" fill="#cbd5e1" class="card-item">• Dynamic Croniter Re-arming</text>
+    <text x="688" y="244" fill="#cbd5e1" class="card-item">• Nightly Discovery Pipeline (02:00 UTC)</text>
+  </g>
+
+  <!-- ==================== 3 CORE PROCESSING PILLARS ==================== -->
+  <!-- Cognitive Memory -->
+  <g filter="url(#glow-cyan)">
+    <rect x="40" y="330" width="310" height="126" rx="10" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+    <path d="M 40 330 h 310 v 26 h -310 z" fill="#1e293b" rx="10" />
+    <rect x="40" y="350" width="310" height="6" fill="#1e293b" />
+    <text x="56" y="348" fill="#38bdf8" font-size="12" class="card-title">🧠 Cognitive Memory</text>
+    <text x="56" y="376" fill="#cbd5e1" class="card-item">• Working Scratchpad Facts</text>
+    <text x="56" y="394" fill="#cbd5e1" class="card-item">• Reflexion &amp; Self-Critique Rules</text>
+    <text x="56" y="412" fill="#cbd5e1" class="card-item">• Episodic Recursive Compaction</text>
+    <text x="56" y="430" fill="#cbd5e1" class="card-item">• RRF Hybrid Search (BM25 + Cosine)</text>
+  </g>
+
+  <!-- Evolutionary Engine (FunSearch) -->
+  <g filter="url(#glow-emerald)">
+    <rect x="380" y="330" width="320" height="126" rx="10" fill="#0f172a" stroke="#10b981" stroke-width="1.75" />
+    <path d="M 380 330 h 320 v 26 h -320 z" fill="#064e3b" rx="10" />
+    <rect x="380" y="350" width="320" height="6" fill="#064e3b" />
+    <text x="396" y="348" fill="#34d399" font-size="12" class="card-title">🧬 Evolutionary Engine</text>
+    <text x="396" y="376" fill="#cbd5e1" class="card-item">• FunSearch Multi-Island Ring Migration</text>
+    <text x="396" y="394" fill="#cbd5e1" class="card-item">• 20-Sequence Diagnostic Fingerprints</text>
+    <text x="396" y="412" fill="#cbd5e1" class="card-item">• AST Parsimony Penalty Scoring</text>
+    <text x="396" y="430" fill="#cbd5e1" class="card-item">• Stagnation Restarts &amp; Mutations</text>
+  </g>
+
+  <!-- Neuro-Symbolic & CEGIS -->
+  <g filter="url(#glow-purple)">
+    <rect x="725" y="330" width="315" height="126" rx="10" fill="#0f172a" stroke="#a855f7" stroke-width="1.75" />
+    <path d="M 725 330 h 315 v 26 h -315 z" fill="#581c87" rx="10" />
+    <rect x="725" y="350" width="315" height="6" fill="#581c87" />
+    <text x="741" y="348" fill="#c084fc" font-size="12" class="card-title">📐 Neuro-Symbolic &amp; CEGIS</text>
+    <text x="741" y="376" fill="#cbd5e1" class="card-item">• Python AST to Z3 Contract Verifier</text>
+    <text x="741" y="394" fill="#cbd5e1" class="card-item">• Singularity (div/0) &amp; Monotonicity</text>
+    <text x="741" y="412" fill="#cbd5e1" class="card-item">• Dynamic Invariant Counterexamples</text>
+    <text x="741" y="430" fill="#cbd5e1" class="card-item">• Lean 4 Mathlib Theorem Prover</text>
+  </g>
+
+  <!-- ==================== BOTTOM ROW CARDS ==================== -->
+  <!-- Dual-Tier Sandboxing -->
+  <g filter="url(#glow-emerald)">
+    <rect x="380" y="515" width="320" height="110" rx="10" fill="#0f172a" stroke="#10b981" stroke-width="1.5" />
+    <path d="M 380 515 h 320 v 26 h -320 z" fill="#1e293b" rx="10" />
+    <rect x="380" y="535" width="320" height="6" fill="#1e293b" />
+    <text x="396" y="533" fill="#10b981" font-size="12" class="card-title">🛡️ Dual-Tier Sandboxing</text>
+    <text x="396" y="561" fill="#cbd5e1" class="card-item">• WebAssembly JIT (&lt;40µs Fuel Limit)</text>
+    <text x="396" y="579" fill="#cbd5e1" class="card-item">• 64KB (1-Page) Linear Memory Isolation</text>
+    <text x="396" y="597" fill="#cbd5e1" class="card-item">• gVisor (runsc) OCI Container Fallback</text>
+  </g>
+
+  <!-- GitOps PR Automation -->
+  <g filter="url(#glow-purple)">
+    <rect x="725" y="515" width="315" height="110" rx="10" fill="#0f172a" stroke="#a855f7" stroke-width="1.5" />
+    <path d="M 725 515 h 315 v 26 h -315 z" fill="#1e293b" rx="10" />
+    <rect x="725" y="535" width="315" height="6" fill="#1e293b" />
+    <text x="741" y="533" fill="#a855f7" font-size="12" class="card-title">🚀 GitOps PR Automation</text>
+    <text x="741" y="561" fill="#cbd5e1" class="card-item">• Automated Discovery Feature Branch</text>
+    <text x="741" y="579" fill="#cbd5e1" class="card-item">• Python Code + Lean 4 Certificate</text>
+    <text x="741" y="597" fill="#cbd5e1" class="card-item">• GitHub REST API Pull Request Open</text>
+  </g>
+</svg>

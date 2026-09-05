@@ -6,39 +6,51 @@
 
 ## ⚡ Architectural Overview
 
+<p align="center">
+  <img src="assets/architecture.svg" alt="Continuous Agent Neuro-Symbolic Architecture" width="100%" />
+</p>
+
+<details>
+<summary><b>🔍 View Interactive Mermaid Topology</b></summary>
+
+```mermaid
+flowchart TD
+    %% Styling and Themes
+    classDef control fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef loop fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef sched fill:#0f172a,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef memory fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef engine fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef prover fill:#581c87,stroke:#a855f7,stroke-width:2px,color:#fff;
+    classDef sandbox fill:#0f172a,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef gitops fill:#0f172a,stroke:#a855f7,stroke-width:2px,color:#fff;
+
+    Deck["<b>FastAPI Real-Time Control Deck</b><br/>(WebSockets, SSE, Telemetry, CEGIS, Lean 4)"]:::control
+
+    Loop["<b>Continuous Agent Loop</b><br/>• Asynchronous Heartbeat<br/>• Multi-Turn Tools<br/>• Circuit Breaker"]:::loop
+    Sched["<b>Task Scheduler (Cron)</b><br/>• Live Countdown Deck<br/>• Dynamic Croniter<br/>• Nightly Discovery"]:::sched
+
+    Mem["<b>Cognitive Memory</b><br/>• Working Scratchpad<br/>• Reflexion (Self-Learn)<br/>• Episodic Compaction<br/>• RRF Hybrid Search"]:::memory
+    Evol["<b>Evolutionary Engine</b><br/>• FunSearch Service<br/>• Multi-Island Model<br/>• Behavioral Probes<br/>• Strategy Stagnation"]:::engine
+    Symb["<b>Neuro-Symbolic & CEGIS</b><br/>• AST-to-Z3 Transpiler<br/>• Singularity / Monotonic<br/>• Dynamic Suite Invariant<br/>• Lean 4 Kernel Prover"]:::prover
+
+    Sand["<b>Dual-Tier Sandboxing</b><br/>• WebAssembly (Fuel Cap)<br/>• 1-Page Linear Memory<br/>• gVisor (runsc) Fallback"]:::sandbox
+    Git["<b>GitOps PR Automation</b><br/>• Auto Feature Branch<br/>• Code + Lean Certificate<br/>• GitHub REST API PR Open"]:::gitops
+
+    Deck --> Loop
+    Deck --> Sched
+
+    Loop --> Mem
+    Loop --> Evol
+
+    Sched --> Evol
+    Sched --> Symb
+
+    Evol --> Sand
+    Symb --> Git
+    Symb -. "<b>CEGIS Invariant Feedback Loop</b>" .-> Evol
 ```
-                           ┌──────────────────────────────────────────────┐
-                           │      FastAPI Real-Time Control Deck          │
-                           │ (WebSockets, SSE, Telemetry, CEGIS, Lean 4)  │
-                           └──────────────────────┬───────────────────────┘
-                                                  │
-                ┌─────────────────────────────────┴─────────────────────────────────┐
-                ▼                                                                   ▼
-  ┌───────────────────────────┐                                       ┌───────────────────────────┐
-  │  Continuous Agent Loop    │                                       │   Task Scheduler (Cron)   │
-  │  - Asynchronous Heartbeat │                                       │   - Live Countdown Deck   │
-  │  - Multi-Turn Tools       │                                       │   - Dynamic Croniter      │
-  │  - Circuit Breaker        │                                       │   - Nightly Discovery     │
-  └─────────────┬─────────────┘                                       └─────────────┬─────────────┘
-                │                                                                   │
-                ├─────────────────────────────────┬─────────────────────────────────┤
-                ▼                                 ▼                                 ▼
-  ┌───────────────────────────┐     ┌───────────────────────────┐     ┌───────────────────────────┐
-  │     Cognitive Memory      │     │    Evolutionary Engine    │     │  Neuro-Symbolic & CEGIS   │
-  │ - Working Scratchpad      │     │ - FunSearch Service       │     │ - AST-to-Z3 Transpiler    │
-  │ - Reflexion (Self-Learn)  │     │ - Multi-Island Model      │     │ - Singularity / Monotonic │
-  │ - Episodic Compaction     │     │ - Behavioral Probes       │     │ - Dynamic Suite Invariant │
-  │ - RRF Hybrid Search       │     │ - Strategy Stagnation     │     │ - Lean 4 Kernel Prover    │
-  └───────────────────────────┘     └─────────────┬─────────────┘     └─────────────┬─────────────┘
-                                                  │                                 │
-                                                  ▼                                 ▼
-                                    ┌───────────────────────────┐     ┌───────────────────────────┐
-                                    │    Dual-Tier Sandboxing   │     │    GitOps PR Automation   │
-                                    │ - WebAssembly (Fuel Cap)  │     │ - Auto Feature Branch     │
-                                    │ - 1-Page Linear Memory    │     │ - Code + Lean Certificate │
-                                    │ - gVisor (runsc) Fallback │     │ - GitHub REST API PR Open │
-                                    └───────────────────────────┘     └───────────────────────────┘
-```
+</details>
 
 ---
 
