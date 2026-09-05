@@ -6,14 +6,56 @@ from config import config
 
 logger = logging.getLogger("CognitiveMemory")
 
+MEMORY_SCHEMA = """
+CREATE TABLE IF NOT EXISTS core_memory (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at REAL NOT NULL DEFAULT (unixepoch('now', 'subsec'))
+);
+
+CREATE TABLE IF NOT EXISTS learned_heuristics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL,
+    condition TEXT NOT NULL,
+    actionable_lesson TEXT NOT NULL,
+    times_applied INTEGER DEFAULT 1,
+    created_at REAL NOT NULL DEFAULT (unixepoch('now', 'subsec'))
+);
+CREATE INDEX IF NOT EXISTS idx_heuristics_cat ON learned_heuristics(category);
+
+CREATE TABLE IF NOT EXISTS episodic_summaries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    start_iteration INTEGER NOT NULL,
+    end_iteration INTEGER NOT NULL,
+    dense_summary TEXT NOT NULL,
+    created_at REAL NOT NULL DEFAULT (unixepoch('now', 'subsec'))
+);
+
+CREATE TABLE IF NOT EXISTS execution_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    iteration INTEGER NOT NULL,
+    summary TEXT NOT NULL,
+    tool_calls_count INTEGER NOT NULL DEFAULT 0,
+    created_at REAL NOT NULL DEFAULT (unixepoch('now', 'subsec'))
+);
+"""
+
 class CognitiveMemoryStore:
     def __init__(self, db_path: str = "agent_state.db"):
         self.db_path = db_path
         self.client = AsyncOpenAI(api_key=config.API_KEY) if config.API_KEY else None
         self.compaction_threshold = 12
+        self._initialized = False
+
+    async def _ensure_schema(self, db: aiosqlite.Connection):
+        if not self._initialized:
+            await db.executescript(MEMORY_SCHEMA)
+            await db.commit()
+            self._initialized = True
 
     async def get_core_memory(self) -> Dict[str, str]:
         async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_schema(db)
             db.row_factory = aiosqlite.Row
             async with db.execute("SELECT key, value FROM core_memory") as c:
                 return {row["key"]: row["value"] for row in await c.fetchall()}
@@ -27,11 +69,13 @@ class CognitiveMemoryStore:
             updated_at = excluded.updated_at;
         """
         async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_schema(db)
             await db.execute(query, (key, value))
             await db.commit()
 
     async def delete_core_memory(self, key: str):
         async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_schema(db)
             await db.execute("DELETE FROM core_memory WHERE key = ?", (key,))
             await db.commit()
 
@@ -43,6 +87,7 @@ class CognitiveMemoryStore:
         LIMIT ?
         """
         async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_schema(db)
             db.row_factory = aiosqlite.Row
             async with db.execute(query, (limit,)) as c:
                 return [dict(r) for r in await c.fetchall()]
@@ -53,16 +98,19 @@ class CognitiveMemoryStore:
         VALUES (?, ?, ?);
         """
         async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_schema(db)
             await db.execute(query, (category, condition, actionable_lesson))
             await db.commit()
 
     async def delete_heuristic(self, heuristic_id: int):
         async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_schema(db)
             await db.execute("DELETE FROM learned_heuristics WHERE id = ?", (heuristic_id,))
             await db.commit()
 
     async def get_prompt_context(self) -> Dict[str, Any]:
         async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_schema(db)
             db.row_factory = aiosqlite.Row
             async with db.execute("SELECT dense_summary FROM episodic_summaries ORDER BY id DESC LIMIT 1") as c:
                 row = await c.fetchone()
@@ -87,6 +135,7 @@ class CognitiveMemoryStore:
             return
 
         async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_schema(db)
             db.row_factory = aiosqlite.Row
             async with db.execute("SELECT COALESCE(MAX(end_iteration), 0) FROM episodic_summaries") as c:
                 last_compacted_iter = (await c.fetchone())[0]
@@ -129,6 +178,7 @@ class CognitiveMemoryStore:
         end_iter = logs_to_compress[-1]["iteration"]
 
         async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_schema(db)
             cursor = await db.execute(
                 "INSERT INTO episodic_summaries (start_iteration, end_iteration, dense_summary) VALUES (?, ?, ?)",
                 (start_iter, end_iter, new_summary)

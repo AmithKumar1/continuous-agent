@@ -137,3 +137,7 @@ class Database:
             )
             await db.commit()
             logger.info("SQLite schema initialized with WAL mode & FTS5.")
+
+    async def init_schema(self):
+        """Initializes tables, triggers, and seeds the singleton state row (alias for init_db)."""
+        await self.init_db()

@@ -90,9 +90,16 @@ class DomainRateLimiter:
         db_store: SqliteCooldownStore,
         default_rate: float = 2.0,
         default_capacity: float = 4.0,
-        domain_rules: Optional[Dict[str, Tuple[float, float]]] = None
+        domain_rules: Optional[Dict[str, Tuple[float, float]]] = None,
+        default_rpm: Optional[float] = None,
+        default_tpm: Optional[float] = None
     ):
         self.db = db_store
+        self.default_rpm = default_rpm
+        self.default_tpm = default_tpm
+        if default_rpm is not None:
+            default_rate = default_rpm / 60.0
+            default_capacity = max(default_capacity, default_rate * 2.0)
         self.default_rate = default_rate
         self.default_capacity = default_capacity
         self.domain_rules = domain_rules or {}
@@ -129,6 +136,28 @@ class DomainRateLimiter:
 
             self.buckets[domain] = bucket
             return bucket
+
+    async def check_and_consume(self, domain: str, tokens: int = 1) -> Tuple[bool, float]:
+        tpm_limit = self.default_tpm or 10000.0
+        if tokens > tpm_limit:
+            wait_needed = ((tokens - tpm_limit) / (tpm_limit / 60.0)) if tpm_limit > 0 else 60.0
+            return False, max(1.0, wait_needed)
+
+        bucket = await self.get_bucket(domain)
+        async with bucket._lock:
+            now = time.monotonic()
+            if now < bucket.paused_until:
+                return False, bucket.paused_until - now
+            elapsed = now - bucket.last_refill
+            bucket.last_refill = now
+            bucket.tokens = min(bucket.capacity, bucket.tokens + (elapsed * bucket.rate))
+
+            if bucket.tokens >= 1.0:
+                bucket.tokens -= 1.0
+                return True, 0.0
+            else:
+                wait_time = (1.0 - bucket.tokens) / bucket.rate
+                return False, wait_time
 
     async def acquire(self, domain: str):
         bucket = await self.get_bucket(domain)
