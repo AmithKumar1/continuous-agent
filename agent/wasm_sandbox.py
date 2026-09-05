@@ -8,13 +8,20 @@ logger = logging.getLogger("WasmSandbox")
 class WasmExecutionEngine:
     def __init__(self, fuel_budget: int = 50_000_000):
         self.fuel_budget = fuel_budget
+        self._engine = None
+
+    def _get_engine(self):
+        if self._engine is None:
+            from wasmtime import Config, Engine
+            cfg = Config()
+            cfg.consume_fuel = True
+            self._engine = Engine(cfg)
+        return self._engine
 
     def compile_wat(self, wat_code: str) -> Tuple[bool, Optional[Any], str]:
         try:
-            from wasmtime import Config, Engine, Module
-            cfg = Config()
-            cfg.consume_fuel = True
-            engine = Engine(cfg)
+            from wasmtime import Module
+            engine = self._get_engine()
             module = Module(engine, wat_code)
             return True, module, ""
         except Exception as e:
@@ -27,8 +34,8 @@ class WasmExecutionEngine:
         bin_size: float = 100.0
     ) -> Tuple[bool, float, str]:
         try:
-            from wasmtime import Config, Engine, Instance, Store, Trap
-            engine = module.engine
+            from wasmtime import Instance, Store, Trap, WasmtimeError
+            engine = getattr(module, "engine", None) or self._get_engine()
             store = Store(engine)
             store.set_fuel(self.fuel_budget)
 
@@ -50,7 +57,7 @@ class WasmExecutionEngine:
                         if cap >= item:
                             try:
                                 score = float(priority_fn(store, float(item), float(cap)))
-                            except Trap as t:
+                            except (Trap, WasmtimeError) as t:
                                 return False, -1.0, f"WASM Trap (Fuel/Memory Limit Exhausted): {str(t)}"
 
                             if score > max_score:

@@ -2,7 +2,7 @@ import asyncio
 import os
 import shutil
 import tempfile
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from config import config
 
 class Lean4Verifier:
@@ -18,9 +18,20 @@ class Lean4Verifier:
             temp_path = f.name
 
         try:
+            lake_bin = shutil.which("lake")
+            repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            lakefile_path = os.path.join(repo_root, "lakefile.lean")
+
+            if lake_bin and os.path.exists(lakefile_path):
+                cmd = [lake_bin, "env", "lean", temp_path]
+                cwd = repo_root
+            else:
+                cmd = [self.lean_bin, temp_path]
+                cwd = None
+
             proc = await asyncio.create_subprocess_exec(
-                self.lean_bin,
-                temp_path,
+                *cmd,
+                cwd=cwd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
