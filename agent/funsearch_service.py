@@ -34,7 +34,17 @@ class FunSearchService:
             "top_fitness_score": round(self.top_fitness_score, 4),
             "champion_code": self.champion_program.code if self.champion_program else None,
             "champion_generation": self.champion_program.generation if self.champion_program else 0,
-            "active_islands_count": len(self.islands)
+            "active_islands_count": len(self.islands),
+            "islands": [
+                {
+                    "id": isl.island_id,
+                    "best_fitness": isl.best_fitness if isl.best_fitness != -float("inf") else 0.0,
+                    "clusters_count": len(isl.clusters),
+                    "evals": isl.generation_count,
+                    "strategy": isl.active_strategy.name
+                }
+                for isl in self.islands
+            ]
         }
 
     async def start(self, evals_per_island: int = 20):
